@@ -1,12 +1,11 @@
-﻿using Autodesk.AutoCAD.ApplicationServices.Core;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Geometry;
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using GrxCAD.ApplicationServices;
+using GrxCAD.DatabaseServices;
+using GrxCAD.EditorInput;
+using GrxCAD.Geometry;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides extension methods for the Editor type.
@@ -23,7 +22,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="ed"/> is null.</exception>
         public static void Zoom(this Editor ed, Extents3d ext)
         {
-            Assert.IsNotNull(ed, nameof(ed));
+            Throwable.ThrowIfArgumentNull(ed, nameof(ed));
             using (ViewTableRecord view = ed.GetCurrentView())
             {
                 ext.TransformBy(view.WorldToEye());
@@ -74,8 +73,8 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="ed"/> is null.</exception>
         public static void ZoomObjects(this Editor ed, IEnumerable<ObjectId> ids)
         {
-            Assert.IsNotNull(ed, nameof(ed));
-            Assert.IsNotNull(ids, nameof(ids));
+            Throwable.ThrowIfArgumentNull(ed, nameof(ed));
+            Throwable.ThrowIfArgumentNull(ids, nameof(ids));
             using (Transaction tr = ed.Document.TransactionManager.StartTransaction())
             {
                 //Extents3d ext = ids
@@ -101,7 +100,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="ed"/> is null.</exception>
         public static void ZoomScale(this Editor ed, double scale)
         {
-            Assert.IsNotNull(ed, nameof(ed));
+            Throwable.ThrowIfArgumentNull(ed, nameof(ed));
             using (ViewTableRecord view = ed.GetCurrentView())
             {
                 view.Width /= scale;
@@ -111,7 +110,7 @@ namespace Gile.AutoCAD.Extension
         }
 
         /// <summary>
-        /// Zooms in current viewport to the specified scale and center. 
+        /// Zooms in current viewport to the specified scale and center.
         /// </summary>
         /// <param name="ed">Instance to which the method applies.</param>
         /// <param name="center">Viewport center.</param>
@@ -119,7 +118,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="ed"/> is null.</exception>
         public static void ZoomCenter(this Editor ed, Point3d center, double scale = 1.0)
         {
-            Assert.IsNotNull(ed, nameof(ed));
+            Throwable.ThrowIfArgumentNull(ed, nameof(ed));
             using (ViewTableRecord view = ed.GetCurrentView())
             {
                 center = center.TransformBy(view.WorldToEye());
@@ -180,7 +179,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="ed"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
         public static PromptSelectionResult GetSelection(this Editor ed, System.Predicate<ObjectId> predicate) =>
-            ed.GetPredicatedSelection(predicate, null, null);
+            ed.GetPredicatedSelection(predicate);
 
         private static PromptSelectionResult GetPredicatedSelection(
             this Editor ed,
@@ -188,10 +187,10 @@ namespace Gile.AutoCAD.Extension
             PromptSelectionOptions options = null,
             SelectionFilter filter = null)
         {
-            Assert.IsNotNull(ed, nameof(ed));
-            Assert.IsNotNull(predicate, nameof(predicate));
+            Throwable.ThrowIfArgumentNull(ed, nameof(ed));
+            Throwable.ThrowIfArgumentNull(predicate, nameof(predicate));
 
-            void onSelectionAdded(object sender, SelectionAddedEventArgs e)
+            void OnSelectionAdded(object sender, SelectionAddedEventArgs e)
             {
                 var ids = e.AddedObjects.GetObjectIds();
                 for (int i = 0; i < ids.Length; i++)
@@ -202,22 +201,16 @@ namespace Gile.AutoCAD.Extension
             }
 
             PromptSelectionResult result;
-            ed.SelectionAdded += onSelectionAdded;
+            ed.SelectionAdded += OnSelectionAdded;
             if (options == null)
             {
-                if (filter == null)
-                    result = ed.GetSelection();
-                else
-                    result = ed.GetSelection(filter);
+                result = filter == null ? ed.GetSelection() : ed.GetSelection(filter);
             }
             else
             {
-                if (filter == null)
-                    result = ed.GetSelection(options);
-                else
-                    result = ed.GetSelection(options, filter);
+                result = filter == null ? ed.GetSelection(options) : ed.GetSelection(options, filter);
             }
-            ed.SelectionAdded -= onSelectionAdded;
+            ed.SelectionAdded -= OnSelectionAdded;
             return result;
         }
 

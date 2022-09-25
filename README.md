@@ -1,6 +1,9 @@
-# Gile.AutoCAD.Extension
-### AutoCAD Helpers Class Library
-Thanks to all the [Swampers](http://www.theswamp.org/index.php) who helped me learning AutoCAD .NET programming, with a special mention to Tony 'TheMaster' Tanzillo and Thorsten 'kaefer' Meinecke for the discussions about the GetObject<T> and GetObjects<T> methods which were the starts points of this library.
+# Sharper.GstarCAD.Extensions
+### GstarCAD Extension Library
+The GstarCAD port of **[Gile.AutoCAD.Extension](https://github.com/gileCAD/Gile.AutoCAD.Extension)**.
+This is an unofficial extension library enhanced for GstarCAD .NET SDK.
+
+> You can get GstarCAD SDK on the official website https://www.gstarcad.com/download/, or on the [Nuget Gallery](https://www.nuget.org/packages/GstarCADNET).
 
 #### This library should help to write code in a more concise and declarative way.
 Example with a method to erase lines in model space which are smaller than a given distance:
@@ -45,9 +48,3 @@ public void EraseShortLines(double minLength)
     }
 }
 ```
-
-Reference this assembly in AutoCAD .NET projects setting the Copy Locale property to True.
-
-Download the [assembly](https://gilecad.azurewebsites.net/Resources/Gile.AutoCAD.Extension.zip) (Gile.AutoCAD.Extension.dll for AutoCAD 2015 an later).
-
-See the [documentation](https://gilecad.azurewebsites.net/Resources/AcadExtensionHelp/index.html).

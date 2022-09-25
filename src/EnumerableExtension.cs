@@ -1,11 +1,11 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Runtime;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using GrxCAD.DatabaseServices;
+using GrxCAD.Runtime;
+using Exception = GrxCAD.Runtime.Exception;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Defines methods to add or removes items from a sequence of disposable objects.
@@ -31,7 +31,7 @@ namespace Gile.AutoCAD.Extension
     /// <summary>
     /// Provides extension methods for the IEnumerable(T) type.
     /// </summary>
-    public static class IEnumerableExtension
+    public static class EnumerableExtension
     {
         /// <summary>
         /// Opens the objects which type matches to the given one, and return them.
@@ -43,27 +43,31 @@ namespace Gile.AutoCAD.Extension
         /// <param name="forceOpenOnLockedLayers">Value indicating if locked layers should be opened.</param>
         /// <returns>The sequence of opened objects.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        /// <exception cref="Autodesk.AutoCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
+        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
         public static IEnumerable<T> GetObjects<T>(
-          this IEnumerable<ObjectId> source,
-          OpenMode mode = OpenMode.ForRead,
-          bool openErased = false,
-          bool forceOpenOnLockedLayers = false) where T : DBObject
+            this IEnumerable<ObjectId> source,
+            OpenMode mode = OpenMode.ForRead,
+            bool openErased = false,
+            bool forceOpenOnLockedLayers = false) where T : DBObject
         {
-            Assert.IsNotNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
 
-            if (source.Any())
+            if (!source.Any())
             {
-                var tr = source.First().Database.GetTopTransaction();
-                var rxClass = RXObject.GetClass(typeof(T));
-                foreach (ObjectId id in source)
+                yield break;
+            }
+
+            var tr = source.First().Database.GetTopTransaction();
+            var rxClass = RXObject.GetClass(typeof(T));
+            foreach (ObjectId id in source)
+            {
+                if (!id.ObjectClass.IsDerivedFrom(rxClass))
                 {
-                    if (id.ObjectClass.IsDerivedFrom(rxClass))
-                    {
-                        if (!id.IsErased || openErased)
-                            yield return (T)tr.GetObject(id, mode, openErased, forceOpenOnLockedLayers);
-                    }
+                    continue;
                 }
+
+                if (!id.IsErased || openErased)
+                    yield return (T)tr.GetObject(id, mode, openErased, forceOpenOnLockedLayers);
             }
         }
 
@@ -72,24 +76,25 @@ namespace Gile.AutoCAD.Extension
         /// </summary>
         /// <typeparam name="T">Type of objects.</typeparam>
         /// <param name="source">Sequence of DBObjects to upgrade.</param>
-        /// <returns>The sequence of opened for write objects (objets on locked layers are discared).</returns>
+        /// <returns>The sequence of opened for write objects (objets on locked layers are discard).</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        /// <exception cref="Autodesk.AutoCAD.Runtime.Exception">eNoActiveTransactions is thrown if there's no active transaction.</exception>
+        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there's no active transaction.</exception>
         public static IEnumerable<T> UpgradeOpen<T>(this IEnumerable<T> source) where T : DBObject
         {
-            Assert.IsNotNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
             foreach (T item in source)
             {
                 try
                 {
                     item.OpenForWrite();
                 }
-                catch (Autodesk.AutoCAD.Runtime.Exception ex)
+                catch (Exception ex)
                 {
                     if (ex.ErrorStatus != ErrorStatus.OnLockedLayer)
                         throw;
                     continue;
                 }
+
                 yield return item;
             }
         }
@@ -102,27 +107,27 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         public static void DisposeAll<T>(this IEnumerable<T> source) where T : IDisposable
         {
-            Assert.IsNotNull(source, nameof(source));
-            if (source.Any())
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            if (!source.Any())
             {
-                System.Exception last = null;
-                foreach (T item in source)
-                {
-                    if (item != null)
-                    {
-                        try
-                        {
-                            item.Dispose();
-                        }
-                        catch (System.Exception ex)
-                        {
-                            last = last ?? ex;
-                        }
-                    }
-                }
-                if (last != null)
-                    throw last;
+                return;
             }
+
+            System.Exception last = null;
+            foreach (T item in source)
+            {
+                try
+                {
+                    item?.Dispose();
+                }
+                catch (System.Exception ex)
+                {
+                    last = last ?? ex;
+                }
+            }
+
+            if (last != null)
+                throw last;
         }
 
         /// <summary>
@@ -135,8 +140,8 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="action"/> is null.</exception>
         public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
         {
-            Assert.IsNotNull(source, nameof(source));
-            Assert.IsNotNull(action, nameof(action));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(action, nameof(action));
             foreach (T item in source) action(item);
         }
 
@@ -150,8 +155,8 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="action"/> is null.</exception>
         public static void ForEach<T>(this IEnumerable<T> source, Action<T, int> action)
         {
-            Assert.IsNotNull(source, nameof(source));
-            Assert.IsNotNull(action, nameof(action));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(action, nameof(action));
             int i = 0;
             foreach (T item in source) action(item, i++);
         }
@@ -190,13 +195,13 @@ namespace Gile.AutoCAD.Extension
             Func<TSource, TKey> selector,
             IComparer<TKey> comparer)
         {
-            Assert.IsNotNull(source, nameof(source));
-            Assert.IsNotNull(selector, nameof(selector));
-            Assert.IsNotNull(comparer, nameof(comparer));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(selector, nameof(selector));
+            Throwable.ThrowIfArgumentNull(comparer, nameof(comparer));
             using (var iterator = source.GetEnumerator())
             {
                 if (!iterator.MoveNext())
-                    throw new InvalidOperationException("Séquence vide");
+                    throw new InvalidOperationException("Empty sequence");
 
                 var max = iterator.Current;
                 var maxKey = selector(max);
@@ -210,6 +215,7 @@ namespace Gile.AutoCAD.Extension
                         maxKey = currentKey;
                     }
                 }
+
                 return max;
             }
         }
@@ -238,7 +244,7 @@ namespace Gile.AutoCAD.Extension
         /// <typeparam name="TKey">Type of the returned value of <paramref name ="selector"/> function.</typeparam>
         /// <param name="source">Sequence to which the method applies.</param>
         /// <param name="selector">Mapping function from <c>TSource</c> to <c>TKey</c>.</param>
-        /// <param name="comparer">Comparateur utilisé pour le type <c>TKey</c>.</param>
+        /// <param name="comparer">A comparer for <c>TKey</c>.</param>
         /// <returns>The smallest item in the sequence.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="selector"/> is null.</exception>
@@ -248,13 +254,13 @@ namespace Gile.AutoCAD.Extension
             Func<TSource, TKey> selector,
             IComparer<TKey> comparer)
         {
-            Assert.IsNotNull(source, nameof(source));
-            Assert.IsNotNull(selector, nameof(selector));
-            Assert.IsNotNull(comparer, nameof(comparer));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(selector, nameof(selector));
+            Throwable.ThrowIfArgumentNull(comparer, nameof(comparer));
             using (var iterator = source.GetEnumerator())
             {
                 if (!iterator.MoveNext())
-                    throw new InvalidOperationException("Séquence vide");
+                    throw new InvalidOperationException("Empty sequence");
 
                 var min = iterator.Current;
                 var minKey = selector(min);
@@ -268,6 +274,7 @@ namespace Gile.AutoCAD.Extension
                         minKey = currentKey;
                     }
                 }
+
                 return min;
             }
         }

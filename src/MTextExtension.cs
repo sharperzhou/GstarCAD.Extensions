@@ -1,9 +1,8 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
+﻿using System;
+using GrxCAD.DatabaseServices;
+using GrxCAD.Geometry;
 
-using System;
-
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides extension methods for the MText Type.
@@ -11,19 +10,19 @@ namespace Gile.AutoCAD.Extension
     public static class MTextExtension
     {
         /// <summary>
-        /// Gets the points at corners of the mtext bounding box.
+        /// Gets the points at corners of the MText bounding box.
         /// </summary>
-        /// <param name="mtext">Instance to which the method applies.</param>
+        /// <param name="text">Instance to which the method applies.</param>
         /// <returns>The points (counter-clockwise from lower left).</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="mtext"/> is null.</exception>
-        public static Point3d[] GetMTextBoxCorners(this MText mtext)
+        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="text"/> is null.</exception>
+        public static Point3d[] GetMTextBoxCorners(this MText text)
         {
-            Assert.IsNotNull(mtext, nameof(mtext));
+            Throwable.ThrowIfArgumentNull(text, nameof(text));
 
-            double width = mtext.ActualWidth;
-            double height = mtext.ActualHeight;
+            double width = text.ActualWidth;
+            double height = text.ActualHeight;
             Point3d point1, point2;
-            switch (mtext.Attachment)
+            switch (text.Attachment)
             {
                 case AttachmentPoint.TopLeft:
                 default:
@@ -64,22 +63,22 @@ namespace Gile.AutoCAD.Extension
                     break;
             }
 
-            var xform =
-                Matrix3d.Displacement(mtext.Location.GetAsVector()) *
-                Matrix3d.Rotation(mtext.Rotation, mtext.Normal, Point3d.Origin) *
-                Matrix3d.PlaneToWorld(new Plane(Point3d.Origin, mtext.Normal));
+            var transform =
+                Matrix3d.Displacement(text.Location.GetAsVector()) *
+                Matrix3d.Rotation(text.Rotation, text.Normal, Point3d.Origin) *
+                Matrix3d.PlaneToWorld(new Plane(Point3d.Origin, text.Normal));
 
             return new[]
             {
-                point1.TransformBy(xform),
-                new Point3d(point2.X, point1.Y, 0.0).TransformBy(xform),
-                point2.TransformBy(xform),
-                new Point3d(point1.X, point2.Y, 0.0).TransformBy(xform)
+                point1.TransformBy(transform),
+                new Point3d(point2.X, point1.Y, 0.0).TransformBy(transform),
+                point2.TransformBy(transform),
+                new Point3d(point1.X, point2.Y, 0.0).TransformBy(transform)
             };
         }
 
         /// <summary>
-        /// Mirrors the mtext honoring the value of MIRRTEXT system variable.
+        /// Mirrors the MText honoring the value of MIRRTEXT system variable.
         /// </summary>
         /// <param name="source">Instance to which the method applies.</param>
         /// <param name="axis">Axis of the mirroring operation.</param>
@@ -88,8 +87,8 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="axis"/> is null.</exception>
         public static void Mirror(this MText source, Line3d axis, bool eraseSource)
         {
-            Assert.IsNotNull(source, nameof(source));
-            Assert.IsNotNull(axis, nameof(axis));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(axis, nameof(axis));
 
             var db = source.Database;
             var tr = db.GetTopTransaction();
@@ -112,15 +111,15 @@ namespace Gile.AutoCAD.Extension
             }
             mirrored.TransformBy(Matrix3d.Mirroring(axis));
 
-            if (!db.Mirrtext)
-            {
-                var pts = mirrored.GetMTextBoxCorners();
-                var cen = new LineSegment3d(pts[0], pts[2]).MidPoint;
-                var rotAxis = Math.Abs(axis.Direction.X) < Math.Abs(axis.Direction.Y) ?
-                    pts[0].GetVectorTo(pts[3]) :
-                    pts[0].GetVectorTo(pts[1]);
-                mirrored.TransformBy(Matrix3d.Rotation(Math.PI, rotAxis, cen));
-            }
+            if (db.Mirrtext)
+                return;
+
+            var pts = mirrored.GetMTextBoxCorners();
+            var cen = new LineSegment3d(pts[0], pts[2]).MidPoint;
+            var rotAxis = Math.Abs(axis.Direction.X) < Math.Abs(axis.Direction.Y) ?
+                pts[0].GetVectorTo(pts[3]) :
+                pts[0].GetVectorTo(pts[1]);
+            mirrored.TransformBy(Matrix3d.Rotation(Math.PI, rotAxis, cen));
         }
     }
 }

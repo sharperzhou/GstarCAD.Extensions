@@ -1,0 +1,10 @@
+﻿<Project>
+  <PropertyGroup>
+    <OutputPath>$(SolutionDir)out\$(Configuration)</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Version>0.8.0.0</Version>
+    <Product>GstarCAD Extension Library</Product>
+    <Description>An unofficial extension library enhanced for GstarCAD .NET SDK</Description>
+    <Copyright>Copyright (c) Sharper under MIT License</Copyright>
+  </PropertyGroup>
+</Project>

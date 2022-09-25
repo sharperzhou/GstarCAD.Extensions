@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Describes a set of disposable values.
@@ -47,28 +47,25 @@ namespace Gile.AutoCAD.Extension
         /// </summary>
         public void Dispose()
         {
-            if (0 < Count)
+            if (Count <= 0)
+                return;
+
+            Exception last = null;
+            var list = this.ToList();
+            Clear();
+            foreach (T item in list)
             {
-                Exception last = null;
-                var list = this.ToList();
-                Clear();
-                foreach (T item in list)
+                try
                 {
-                    if (item != null)
-                    {
-                        try
-                        {
-                            item.Dispose();
-                        }
-                        catch (Exception ex)
-                        {
-                            last = last ?? ex;
-                        }
-                    }
+                    item?.Dispose();
                 }
-                if (last != null)
-                    throw last;
+                catch (Exception ex)
+                {
+                    last = last ?? ex;
+                }
             }
+            if (last != null)
+                throw last;
         }
 
         /// <summary>
@@ -77,7 +74,7 @@ namespace Gile.AutoCAD.Extension
         /// <param name="items">Items to add.</param>
         public void AddRange(IEnumerable<T> items)
         {
-            Assert.IsNotNull(items, nameof(items));
+            Throwable.ThrowIfArgumentNull(items, nameof(items));
             UnionWith(items);
         }
 
@@ -88,7 +85,7 @@ namespace Gile.AutoCAD.Extension
         /// <returns>The sequence of effectively removed items.</returns>
         public IEnumerable<T> RemoveRange(IEnumerable<T> items)
         {
-            Assert.IsNotNull(items, nameof(items));
+            Throwable.ThrowIfArgumentNull(items, nameof(items));
             ExceptWith(items);
             return items;
         }

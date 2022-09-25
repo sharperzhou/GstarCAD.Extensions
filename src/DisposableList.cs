@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Describes a list of disposable values.
@@ -26,7 +26,7 @@ namespace Gile.AutoCAD.Extension
         /// <summary>
         /// Creates a new empty instance.
         /// </summary>
-        /// <param name="capacity">Initial cpacity</param>
+        /// <param name="capacity">Initial capacity</param>
         public DisposableList(int capacity)
             : base(capacity) { }
 
@@ -35,28 +35,27 @@ namespace Gile.AutoCAD.Extension
         /// </summary>
         public void Dispose()
         {
-            if (0 < Count)
+            if (0 >= Count)
             {
-                Exception last = null;
-                var list = this.ToList();
-                Clear();
-                foreach (T item in list)
-                {
-                    if (item != null)
-                    {
-                        try
-                        {
-                            item.Dispose();
-                        }
-                        catch (Exception ex)
-                        {
-                            last = last ?? ex;
-                        }
-                    }
-                }
-                if (last != null)
-                    throw last;
+                return;
             }
+
+            Exception last = null;
+            var list = this.ToList();
+            Clear();
+            foreach (T item in list)
+            {
+                try
+                {
+                    item?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    last = last ?? ex;
+                }
+            }
+            if (last != null)
+                throw last;
         }
 
         /// <summary>
@@ -66,7 +65,7 @@ namespace Gile.AutoCAD.Extension
         /// <returns>The sequence of effectively removed items.</returns>
         public IEnumerable<T> RemoveRange(IEnumerable<T> items)
         {
-            Assert.IsNotNull(items, nameof(items));
+            Throwable.ThrowIfArgumentNull(items, nameof(items));
             foreach (T item in items)
             {
                 if (Remove(item))

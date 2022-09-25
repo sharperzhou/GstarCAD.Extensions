@@ -1,15 +1,16 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
+﻿using GrxCAD.ApplicationServices;
+using GrxCAD.DatabaseServices;
+using GrxCAD.EditorInput;
 
-// Inspired by Scott McFarlane
-// https://www.autodesk.com/autodesk-university/class/Being-Remarkable-C-NET-AutoCAD-Developer-2015#handout
-
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides easy access to several "active" objects in AutoCAD runtime environment.
     /// </summary>
+    /// <remarks>
+    /// Inspired by Scott McFarlane
+    /// https://www.autodesk.com/autodesk-university/class/Being-Remarkable-C-NET-AutoCAD-Developer-2015#handout
+    /// </remarks>
     public static class Active
     {
         /// <summary>

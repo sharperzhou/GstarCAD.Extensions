@@ -1,6 +1,6 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
+﻿using GrxCAD.DatabaseServices;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides extension methods for the DBObjectCollection type.
@@ -14,22 +14,19 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         public static void DisposeAll(this DBObjectCollection source)
         {
-            Assert.IsNotNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
             if (source.Count > 0)
             {
-                System.Exception last = null; 
+                System.Exception last = null;
                 foreach (DBObject obj in source)
                 {
-                    if (obj != null)
+                    try
                     {
-                        try
-                        {
-                            obj.Dispose();
-                        }
-                        catch (System.Exception ex)
-                        {
-                            last = last ?? ex;
-                        }
+                        obj?.Dispose();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        last = last ?? ex;
                     }
                 }
                 source.Clear();

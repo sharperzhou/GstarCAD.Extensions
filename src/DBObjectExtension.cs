@@ -1,7 +1,7 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Runtime;
+﻿using GrxCAD.DatabaseServices;
+using GrxCAD.Runtime;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides extension methods for the DBObject type.
@@ -16,9 +16,10 @@ namespace Gile.AutoCAD.Extension
         /// <param name="mode">Open mode to obtain in.</param>
         /// <returns><c>true</c>, if the operation succeeded; <c>false</c>, otherwise.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        public static bool TryGetExtensionDictionary(this DBObject source, out DBDictionary dict, OpenMode mode = OpenMode.ForRead)
+        public static bool TryGetExtensionDictionary(this DBObject source, out DBDictionary dict,
+            OpenMode mode = OpenMode.ForRead)
         {
-            Assert.IsNotNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
 
             dict = null;
             var dictId = source.ExtensionDictionary;
@@ -26,6 +27,7 @@ namespace Gile.AutoCAD.Extension
             {
                 return false;
             }
+
             dict = dictId.GetObject<DBDictionary>(mode);
             return true;
         }
@@ -38,12 +40,13 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         public static DBDictionary GetOrCreateExtensionDictionary(this DBObject source)
         {
-            Assert.IsNotNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
             if (source.ExtensionDictionary == ObjectId.Null)
             {
                 source.OpenForWrite();
                 source.CreateExtensionDictionary();
             }
+
             return source.ExtensionDictionary.GetObject<DBDictionary>();
         }
 
@@ -57,13 +60,9 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentException">Thrown if <paramref name ="key"/> is null or empty.</exception>
         public static ResultBuffer GetXDictionaryXrecordData(this DBObject source, string key)
         {
-            Assert.IsNotNull(source, nameof(source));
-            Assert.IsNotNullOrWhiteSpace(key, nameof(key));
-            if (!source.TryGetExtensionDictionary(out DBDictionary xdict))
-            {
-                return null;
-            }
-            return xdict.GetXrecordData(key);
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            Throwable.ThrowIfStringNullOrWhiteSpace(key, nameof(key));
+            return source.TryGetExtensionDictionary(out DBDictionary dict) ? dict.GetXrecordData(key) : null;
         }
 
         /// <summary>
@@ -89,8 +88,8 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentException">Thrown if <paramref name ="key"/> is null or empty.</exception>
         public static void SetXDictionaryXrecordData(this DBObject target, string key, ResultBuffer data)
         {
-            Assert.IsNotNull(target, nameof(target));
-            Assert.IsNotNullOrWhiteSpace(key, nameof(key));
+            Throwable.ThrowIfArgumentNull(target, nameof(target));
+            Throwable.ThrowIfStringNullOrWhiteSpace(key, nameof(key));
             target.GetOrCreateExtensionDictionary().SetXrecordData(key, data);
         }
 
@@ -105,8 +104,8 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="Exception">eBadDxfSequence is thrown if the result buffer is not valid.</exception>
         public static void SetXDataForApplication(this DBObject target, ResultBuffer data)
         {
-            Assert.IsNotNull(target, nameof(target));
-            Assert.IsNotNull(data, nameof(data));
+            Throwable.ThrowIfArgumentNull(target, nameof(target));
+            Throwable.ThrowIfArgumentNull(data, nameof(data));
             Database db = target.Database;
             Transaction tr = db.GetTopTransaction();
             var typedValue = data.AsArray()[0];
@@ -122,6 +121,7 @@ namespace Gile.AutoCAD.Extension
                 regAppTable.Add(regApp);
                 tr.AddNewlyCreatedDBObject(regApp, true);
             }
+
             target.XData = data;
         }
 
@@ -133,7 +133,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="Exception">eNoActiveTransactions is thrown if there's no active transaction.</exception>
         public static void OpenForWrite(this DBObject dbObj)
         {
-            Assert.IsNotNull(dbObj, nameof(dbObj));
+            Throwable.ThrowIfArgumentNull(dbObj, nameof(dbObj));
 
             if (!dbObj.IsWriteEnabled)
                 dbObj.Database.GetTopTransaction().GetObject(dbObj.ObjectId, OpenMode.ForWrite);

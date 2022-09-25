@@ -1,11 +1,10 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using GrxCAD.DatabaseServices;
+using GrxCAD.Geometry;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides extension methods for the BlockReference type.
@@ -20,7 +19,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         public static string GetEffectiveName(this BlockReference source)
         {
-            Assert.IsNotNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
 
             return source.DynamicBlockTableRecord.GetObject<BlockTableRecord>().Name;
         }
@@ -31,9 +30,10 @@ namespace Gile.AutoCAD.Extension
         /// <param name="source">Instance to which the method applies.</param>
         /// <returns>Sequence of pairs Tag/Attribute.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        public static IEnumerable<KeyValuePair<string, AttributeReference>> GetAttributesByTag(this BlockReference source)
+        public static IEnumerable<KeyValuePair<string, AttributeReference>> GetAttributesByTag(
+            this BlockReference source)
         {
-            Assert.IsNotNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
             return source
                 .AttributeCollection.GetObjects()
                 .Select(att => new KeyValuePair<string, AttributeReference>(att.Tag, att));
@@ -47,7 +47,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         public static Dictionary<string, string> GetAttributesValues(this BlockReference source)
         {
-            Assert.IsNotNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
             return source.GetAttributesByTag().ToDictionary(p => p.Key, p => p.Value.TextString);
         }
 
@@ -63,9 +63,9 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="value"/> is null.</exception>
         public static string SetAttributeValue(this BlockReference target, string tag, string value)
         {
-            Assert.IsNotNull(target, nameof(target));
-            Assert.IsNotNullOrWhiteSpace(tag, nameof(tag));
-            Assert.IsNotNull(value, nameof(value));
+            Throwable.ThrowIfArgumentNull(target, nameof(target));
+            Throwable.ThrowIfStringNullOrWhiteSpace(tag, nameof(tag));
+            Throwable.ThrowIfArgumentNull(value, nameof(value));
 
             foreach (AttributeReference attRef in target.AttributeCollection.GetObjects())
             {
@@ -75,6 +75,7 @@ namespace Gile.AutoCAD.Extension
                     return value;
                 }
             }
+
             return null;
         }
 
@@ -87,8 +88,8 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="attribs"/> is null.</exception>
         public static void SetAttributeValues(this BlockReference target, Dictionary<string, string> attribs)
         {
-            Assert.IsNotNull(target, nameof(target));
-            Assert.IsNotNull(attribs, nameof(attribs));
+            Throwable.ThrowIfArgumentNull(target, nameof(target));
+            Throwable.ThrowIfArgumentNull(attribs, nameof(attribs));
 
             foreach (AttributeReference attRef in target.AttributeCollection.GetObjects())
             {
@@ -107,10 +108,11 @@ namespace Gile.AutoCAD.Extension
         /// <param name="attribValues">Collection of pairs Tag/Value.</param>
         /// <returns>A Dictionary containing the newly created attribute references by tag.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="target"/> is null.</exception>
-        /// <exception cref="Autodesk.AutoCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
-        public static Dictionary<string, AttributeReference> AddAttributeReferences(this BlockReference target, Dictionary<string, string> attribValues)
+        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
+        public static Dictionary<string, AttributeReference> AddAttributeReferences(this BlockReference target,
+            Dictionary<string, string> attribValues)
         {
-            Assert.IsNotNull(target, nameof(target));
+            Throwable.ThrowIfArgumentNull(target, nameof(target));
 
             Transaction tr = target.Database.GetTopTransaction();
 
@@ -127,11 +129,13 @@ namespace Gile.AutoCAD.Extension
                     {
                         attRef.TextString = attribValues[attDef.Tag.ToUpper()];
                     }
+
                     target.AttributeCollection.AppendAttribute(attRef);
                     tr.AddNewlyCreatedDBObject(attRef, true);
                     attribs[attRef.Tag] = attRef;
                 }
             }
+
             return attribs;
         }
 
@@ -139,13 +143,14 @@ namespace Gile.AutoCAD.Extension
         /// Resets the attribute references keeping their values.
         /// </summary>
         /// <param name="target">Instance to which the method applies.</param>
-        /// <param name="attDefs">Sequence of attribute definitions.</param>
+        /// <param name="attributeDefinitions">Sequence of attribute definitions.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="target"/> is null.</exception>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name ="attDefs"/> is null.</exception>
-        internal static void ResetAttributes(this BlockReference target, IEnumerable<AttributeDefinition> attDefs)
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name ="attributeDefinitions"/> is null.</exception>
+        internal static void ResetAttributes(this BlockReference target,
+            IEnumerable<AttributeDefinition> attributeDefinitions)
         {
-            Assert.IsNotNull(target, nameof(target));
-            Assert.IsNotNull(attDefs, nameof(attDefs));
+            Throwable.ThrowIfArgumentNull(target, nameof(target));
+            Throwable.ThrowIfArgumentNull(attributeDefinitions, nameof(attributeDefinitions));
 
             var attValues = new Dictionary<string, string>();
             foreach (AttributeReference attRef in target.AttributeCollection.GetObjects(OpenMode.ForWrite))
@@ -154,20 +159,22 @@ namespace Gile.AutoCAD.Extension
                     attRef.IsMTextAttribute ? attRef.MTextAttribute.Contents : attRef.TextString);
                 attRef.Erase();
             }
-            foreach (AttributeDefinition attDef in attDefs)
+
+            foreach (AttributeDefinition attDef in attributeDefinitions)
             {
                 var attRef = new AttributeReference();
                 attRef.SetAttributeFromBlock(attDef, target.BlockTransform);
                 if (attDef.Constant)
                 {
-                    attRef.TextString = attDef.IsMTextAttributeDefinition ?
-                        attDef.MTextAttributeDefinition.Contents :
-                        attDef.TextString;
+                    attRef.TextString = attDef.IsMTextAttributeDefinition
+                        ? attDef.MTextAttributeDefinition.Contents
+                        : attDef.TextString;
                 }
                 else if (attValues.ContainsKey(attDef.Tag))
                 {
                     attRef.TextString = attValues[attDef.Tag];
                 }
+
                 target.AttributeCollection.AppendAttribute(attRef);
                 target.Database.TransactionManager.AddNewlyCreatedDBObject(attRef, true);
             }
@@ -183,14 +190,13 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentException">Thrown if <paramref name ="propName"/> is null or empty.</exception>
         public static DynamicBlockReferenceProperty GetDynamicProperty(this BlockReference source, string propName)
         {
-            Assert.IsNotNull(source, nameof(source));
-            Assert.IsNotNullOrWhiteSpace(propName, nameof(propName));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            Throwable.ThrowIfStringNullOrWhiteSpace(propName, nameof(propName));
 
-            if (source.IsDynamicBlock)
-                foreach (DynamicBlockReferenceProperty prop in source.DynamicBlockReferencePropertyCollection)
-                    if (prop.PropertyName.Equals(propName))
-                        return prop;
-            return null;
+            return !source.IsDynamicBlock
+                ? null
+                : source.DynamicBlockReferencePropertyCollection.Cast<DynamicBlockReferenceProperty>()
+                    .FirstOrDefault(prop => prop.PropertyName.Equals(propName));
         }
 
         /// <summary>
@@ -203,12 +209,11 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentException">Thrown if <paramref name ="propName"/> is null or empty.</exception>
         public static object GetDynamicPropertyValue(this BlockReference source, string propName)
         {
-            Assert.IsNotNull(source, nameof(source));
-            Assert.IsNotNullOrWhiteSpace(propName, nameof(propName));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            Throwable.ThrowIfStringNullOrWhiteSpace(propName, nameof(propName));
 
             DynamicBlockReferenceProperty prop = source.GetDynamicProperty(propName);
-            if (prop == null) return null;
-            return prop.Value;
+            return prop?.Value;
         }
 
         /// <summary>
@@ -222,14 +227,22 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="value"/> is null.</exception>
         public static void SetDynamicPropertyValue(this BlockReference target, string propName, object value)
         {
-            Assert.IsNotNull(target, nameof(target));
-            Assert.IsNotNullOrWhiteSpace(propName, nameof(propName));
-            Assert.IsNotNull(value, nameof(value));
+            Throwable.ThrowIfArgumentNull(target, nameof(target));
+            Throwable.ThrowIfStringNullOrWhiteSpace(propName, nameof(propName));
+            Throwable.ThrowIfArgumentNull(value, nameof(value));
             DynamicBlockReferenceProperty prop = target.GetDynamicProperty(propName);
-            if (prop != null)
+            if (prop == null)
             {
-                try { prop.Value = value; }
-                catch { }
+                return;
+            }
+
+            try
+            {
+                prop.Value = value;
+            }
+            catch
+            {
+                // ignored
             }
         }
 
@@ -243,8 +256,8 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="axis"/> is null.</exception>
         public static void Mirror(this BlockReference source, Line3d axis, bool eraseSource)
         {
-            Assert.IsNotNull(source, nameof(source));
-            Assert.IsNotNull(axis, nameof(axis));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(axis, nameof(axis));
 
             var db = source.Database;
             var tr = db.GetTopTransaction();
@@ -265,20 +278,23 @@ namespace Gile.AutoCAD.Extension
                 db.DeepCloneObjects(ids, db.CurrentSpaceId, mapping, false);
                 mirrored = (BlockReference)tr.GetObject(mapping[source.ObjectId].Value, OpenMode.ForWrite);
             }
+
             mirrored.TransformBy(Matrix3d.Mirroring(axis));
 
-            if (!db.Mirrtext)
+            if (db.Mirrtext)
             {
-                foreach (ObjectId id in mirrored.AttributeCollection)
-                {
-                    var attRef = (AttributeReference)tr.GetObject(id, OpenMode.ForWrite);
-                    var pts = attRef.GetTextBoxCorners();
-                    var cen = new LineSegment3d(pts[0], pts[2]).MidPoint;
-                    var rotAxis = Math.Abs(axis.Direction.X) < Math.Abs(axis.Direction.Y) ?
-                        pts[0].GetVectorTo(pts[3]) :
-                        pts[0].GetVectorTo(pts[1]);
-                    mirrored.TransformBy(Matrix3d.Rotation(Math.PI, rotAxis, cen));
-                }
+                return;
+            }
+
+            foreach (ObjectId id in mirrored.AttributeCollection)
+            {
+                var attRef = (AttributeReference)tr.GetObject(id, OpenMode.ForWrite);
+                var pts = attRef.GetTextBoxCorners();
+                var cen = new LineSegment3d(pts[0], pts[2]).MidPoint;
+                var rotAxis = Math.Abs(axis.Direction.X) < Math.Abs(axis.Direction.Y)
+                    ? pts[0].GetVectorTo(pts[3])
+                    : pts[0].GetVectorTo(pts[1]);
+                mirrored.TransformBy(Matrix3d.Rotation(Math.PI, rotAxis, cen));
             }
         }
     }

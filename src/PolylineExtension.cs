@@ -1,10 +1,9 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using GrxCAD.DatabaseServices;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Enumeration of offset side options
@@ -15,30 +14,35 @@ namespace Gile.AutoCAD.Extension
         /// Inside.
         /// </summary>
         In,
+
         /// <summary>
         /// Outside.
         /// </summary>
         Out,
+
         /// <summary>
         /// Left side.
         /// </summary>
         Left,
+
         /// <summary>
         /// Right side.
         /// </summary>
         Right,
+
         /// <summary>
         /// Both sides.
         /// </summary>
         Both
     }
 
-    // credits to Tony 'TheMaster' Tanzillo
-    // http://www.theswamp.org/index.php?topic=31862.msg494503#msg494503
-
     /// <summary>
     /// Provides the Offset() extension method for the Polyline type
     /// </summary>
+    /// <remarks>
+    /// credits to Tony 'TheMaster' Tanzillo
+    /// http://www.theswamp.org/index.php?topic=31862.msg494503#msg494503
+    /// </remarks>
     public static class PolylineExtension
     {
         /// <summary>
@@ -51,31 +55,31 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         public static IEnumerable<Polyline> Offset(this Polyline source, double offsetDist, OffsetSide side)
         {
-            Assert.IsNotNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
 
             offsetDist = Math.Abs(offsetDist);
-            using (var plines = new DisposableSet<Polyline>())
+            using (var polylineSet = new DisposableSet<Polyline>())
             {
                 IEnumerable<Polyline> offsetRight = source.GetOffsetCurves(offsetDist).Cast<Polyline>();
-                plines.AddRange(offsetRight);
+                polylineSet.AddRange(offsetRight);
                 IEnumerable<Polyline> offsetLeft = source.GetOffsetCurves(-offsetDist).Cast<Polyline>();
-                plines.AddRange(offsetLeft);
-                double areaRight = offsetRight.Select(pline => pline.Area).Sum();
-                double areaLeft = offsetLeft.Select(pline => pline.Area).Sum();
+                polylineSet.AddRange(offsetLeft);
+                double areaRight = offsetRight.Select(polyline => polyline.Area).Sum();
+                double areaLeft = offsetLeft.Select(polyline => polyline.Area).Sum();
                 switch (side)
                 {
                     case OffsetSide.In:
-                        return plines.RemoveRange(
-                           areaRight < areaLeft ? offsetRight : offsetLeft);
+                        return polylineSet.RemoveRange(
+                            areaRight < areaLeft ? offsetRight : offsetLeft);
                     case OffsetSide.Out:
-                        return plines.RemoveRange(
-                           areaRight < areaLeft ? offsetLeft : offsetRight);
+                        return polylineSet.RemoveRange(
+                            areaRight < areaLeft ? offsetLeft : offsetRight);
                     case OffsetSide.Left:
-                        return plines.RemoveRange(offsetLeft);
+                        return polylineSet.RemoveRange(offsetLeft);
                     case OffsetSide.Right:
-                        return plines.RemoveRange(offsetRight);
+                        return polylineSet.RemoveRange(offsetRight);
                     case OffsetSide.Both:
-                        plines.Clear();
+                        polylineSet.Clear();
                         return offsetRight.Concat(offsetLeft);
                     default:
                         return null;

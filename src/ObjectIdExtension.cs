@@ -1,7 +1,7 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Runtime;
+﻿using GrxCAD.DatabaseServices;
+using GrxCAD.Runtime;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides extension methods for the ObjectId type.
@@ -28,9 +28,9 @@ namespace Gile.AutoCAD.Extension
             bool forceOpenOnLockedLayer = false)
             where T : DBObject
         {
-            Assert.IsNotObjectIdNull(id, nameof(id));
+            Throwable.ThrowIfObjectIdNull(id, nameof(id));
             var tr = id.Database.GetTopTransaction();
-            obj = default(T);
+            obj = default;
 
             if (!id.ObjectClass.IsDerivedFrom(RXObject.GetClass(typeof(T))))
                 return false;
@@ -58,7 +58,7 @@ namespace Gile.AutoCAD.Extension
             bool forceOpenOnLockedLayer = false)
             where T : DBObject
         {
-            Assert.IsNotObjectIdNull(id, nameof(id));
+            Throwable.ThrowIfObjectIdNull(id, nameof(id));
             var tr = id.Database.GetTopTransaction();
 
             return (T)tr.GetObject(id, mode, openErased, forceOpenOnLockedLayer);

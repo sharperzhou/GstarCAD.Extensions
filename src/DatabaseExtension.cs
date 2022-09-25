@@ -1,10 +1,9 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Runtime;
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using GrxCAD.DatabaseServices;
+using GrxCAD.Runtime;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides extension methods for the Database type.
@@ -17,10 +16,10 @@ namespace Gile.AutoCAD.Extension
         /// <param name="db">Instance to which the method applies.</param>
         /// <returns>The active top transaction.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="db"/> is null.</exception>
-        /// <exception cref="Autodesk.AutoCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
         public static Transaction GetTopTransaction(this Database db)
         {
-            Assert.IsNotNull(db, nameof(db));
+            Throwable.ThrowIfArgumentNull(db, nameof(db));
             var tr = db.TransactionManager.TopTransaction;
             if (tr == null)
                 throw new Exception(ErrorStatus.NoActiveTransactions);
@@ -34,9 +33,9 @@ namespace Gile.AutoCAD.Extension
         /// <param name="mode">Open mode to obtain in.</param>
         /// <returns>The named object dictionary.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="db"/> is null.</exception>
-        public static DBDictionary GetNOD(this Database db, OpenMode mode = OpenMode.ForRead)
+        public static DBDictionary GetNamedObjectsDictionary(this Database db, OpenMode mode = OpenMode.ForRead)
         {
-            Assert.IsNotNull(db, nameof(db));
+            Throwable.ThrowIfArgumentNull(db, nameof(db));
             return db.NamedObjectsDictionaryId.GetObject<DBDictionary>(mode);
         }
 
@@ -49,7 +48,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="db"/> is null.</exception>
         public static BlockTableRecord GetModelSpace(this Database db, OpenMode mode = OpenMode.ForRead)
         {
-            Assert.IsNotNull(db, nameof(db));
+            Throwable.ThrowIfArgumentNull(db, nameof(db));
             return SymbolUtilityServices.GetBlockModelSpaceId(db).GetObject<BlockTableRecord>(mode);
         }
 
@@ -62,7 +61,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="db"/> is null.</exception>
         public static BlockTableRecord GetCurrentSpace(this Database db, OpenMode mode = OpenMode.ForRead)
         {
-            Assert.IsNotNull(db, nameof(db));
+            Throwable.ThrowIfArgumentNull(db, nameof(db));
             return db.CurrentSpaceId.GetObject<BlockTableRecord>(mode);
         }
 
@@ -74,9 +73,10 @@ namespace Gile.AutoCAD.Extension
         /// <param name="mode">Open mode to obtain in.</param>
         /// <returns>The sequence of block table records.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="db"/> is null.</exception>
-        public static IEnumerable<BlockTableRecord> GetLayoutBlockTableRecords(this Database db, bool exceptModel = true, OpenMode mode = OpenMode.ForRead)
+        public static IEnumerable<BlockTableRecord> GetLayoutBlockTableRecords(this Database db,
+            bool exceptModel = true, OpenMode mode = OpenMode.ForRead)
         {
-            Assert.IsNotNull(db, nameof(db));
+            Throwable.ThrowIfArgumentNull(db, nameof(db));
             return db.GetLayouts(exceptModel).Select(l => l.BlockTableRecordId.GetObject<BlockTableRecord>(mode));
         }
 
@@ -89,10 +89,10 @@ namespace Gile.AutoCAD.Extension
         /// <param name="openErased">Value indicating whether to obtain erased objects.</param>
         /// <returns>The sequence of layouts.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="db"/> is null.</exception>
-        public static IEnumerable<Layout> GetLayouts(this Database db, bool exceptModel = true, OpenMode mode = OpenMode.ForRead, bool openErased = false)
+        public static IEnumerable<Layout> GetLayouts(this Database db, bool exceptModel = true,
+            OpenMode mode = OpenMode.ForRead, bool openErased = false)
         {
-            Assert.IsNotNull(db, nameof(db));
-            Transaction tr = db.GetTopTransaction();
+            Throwable.ThrowIfArgumentNull(db, nameof(db));
             foreach (DBDictionaryEntry entry in db.LayoutDictionaryId.GetObject<DBDictionary>())
             {
                 if ((entry.Key != "Model" || !exceptModel) && (!entry.Value.IsErased || openErased))

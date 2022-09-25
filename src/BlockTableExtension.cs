@@ -1,6 +1,6 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
+﻿using GrxCAD.DatabaseServices;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides extension methods for the BlockTable type.
@@ -18,8 +18,8 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentException">Thrown if <paramref name ="blockName"/> is null or empty.</exception>
         public static ObjectId GetBlock(this BlockTable blockTable, string blockName)
         {
-            Assert.IsNotNull(blockTable, nameof(blockTable));
-            Assert.IsNotNullOrWhiteSpace(blockName, nameof(blockName));
+            Throwable.ThrowIfArgumentNull(blockTable, nameof(blockTable));
+            Throwable.ThrowIfStringNullOrWhiteSpace(blockName, nameof(blockName));
             if (blockTable.Has(blockName))
                 return blockTable[blockName];
             try

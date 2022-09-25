@@ -1,7 +1,7 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
+﻿using GrxCAD.DatabaseServices;
+using GrxCAD.Geometry;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides extension for the AbstractViewTableRecord type.
@@ -16,7 +16,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="view"/> is null.</exception>
         public static Matrix3d EyeToWorld(this AbstractViewTableRecord view)
         {
-            Assert.IsNotNull(view, nameof(view));
+            Throwable.ThrowIfArgumentNull(view, nameof(view));
             return
                 Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target) *
                 Matrix3d.Displacement(view.Target.GetAsVector()) *
@@ -31,7 +31,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="view"/> is null.</exception>
         public static Matrix3d WorldToEye(this AbstractViewTableRecord view)
         {
-            Assert.IsNotNull(view, nameof(view));
+            Throwable.ThrowIfArgumentNull(view, nameof(view));
             return
                 Matrix3d.WorldToPlane(view.ViewDirection) *
                 Matrix3d.Displacement(view.Target.GetAsVector().Negate()) *

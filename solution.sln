@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31624.102
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gile.AutoCAD.Extension", "Gile.AutoCAD.Extension\Gile.AutoCAD.Extension.csproj", "{32EBFF40-CE54-4B05-AEBA-2EEFFEDB443B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GstarCAD.Extensions", "src\GstarCAD.Extensions.csproj", "{32EBFF40-CE54-4B05-AEBA-2EEFFEDB443B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,10 +1,9 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
-
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
+using GrxCAD.DatabaseServices;
+using GrxCAD.Geometry;
 
-namespace Gile.AutoCAD.Extension
+namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
     /// Provides extension methods for the DBText type.
@@ -19,7 +18,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="dbText"/> is null.</exception>
         public static Point3d GetTextBoxCenter(this DBText dbText)
         {
-            Assert.IsNotNull(dbText, nameof(dbText));
+            Throwable.ThrowIfArgumentNull(dbText, nameof(dbText));
 
             int mirrored = dbText.IsMirroredInX ? 2 : 0;
             mirrored |= dbText.IsMirroredInY ? 4 : 0;
@@ -33,20 +32,20 @@ namespace Gile.AutoCAD.Extension
                     new TypedValue(72, (int)dbText.HorizontalMode),
                     new TypedValue(73, (int)dbText.VerticalMode));
 
-            var xform =
+            var transform =
                 Matrix3d.Displacement(dbText.Position.GetAsVector()) *
                 Matrix3d.Rotation(dbText.Rotation, dbText.Normal, Point3d.Origin) *
                 Matrix3d.PlaneToWorld(new Plane(Point3d.Origin, dbText.Normal));
 
-            var point1 = new double[3];
-            var point2 = new double[3];
+            double[] point1 = new double[3];
+            double[] point2 = new double[3];
             acedTextBox(rb.UnmanagedObject, point1, point2);
 
             return new Point3d(
                 (point1[0] + point2[0]) / 2.0,
                 (point1[1] + point2[1]) / 2.0,
                 (point1[2] + point2[2]) / 2.0)
-                .TransformBy(xform);
+                .TransformBy(transform);
         }
 
         /// <summary>
@@ -57,7 +56,7 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="dbText"/> is null.</exception>
         public static Point3d[] GetTextBoxCorners(this DBText dbText)
         {
-            Assert.IsNotNull(dbText, nameof(dbText));
+            Throwable.ThrowIfArgumentNull(dbText, nameof(dbText));
 
             int mirrored = dbText.IsMirroredInX ? 2 : 0;
             mirrored |= dbText.IsMirroredInY ? 4 : 0;
@@ -71,22 +70,22 @@ namespace Gile.AutoCAD.Extension
                     new TypedValue(72, (int)dbText.HorizontalMode),
                     new TypedValue(73, (int)dbText.VerticalMode));
 
-            var point1 = new double[3];
-            var point2 = new double[3];
+            double[] point1 = new double[3];
+            double[] point2 = new double[3];
 
             acedTextBox(rb.UnmanagedObject, point1, point2);
 
-            var xform =
+            var transform =
                 Matrix3d.Displacement(dbText.Position.GetAsVector()) *
                 Matrix3d.Rotation(dbText.Rotation, dbText.Normal, Point3d.Origin) *
                 Matrix3d.PlaneToWorld(new Plane(Point3d.Origin, dbText.Normal));
 
             return new[]
             {
-                new Point3d(point1).TransformBy(xform),
-                new Point3d(point2[0], point1[1], 0.0).TransformBy(xform),
-                new Point3d(point2).TransformBy(xform),
-                new Point3d(point1[0], point2[1], 0.0).TransformBy(xform)
+                new Point3d(point1).TransformBy(transform),
+                new Point3d(point2[0], point1[1], 0.0).TransformBy(transform),
+                new Point3d(point2).TransformBy(transform),
+                new Point3d(point1[0], point2[1], 0.0).TransformBy(transform)
             };
         }
 
@@ -100,8 +99,8 @@ namespace Gile.AutoCAD.Extension
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="axis"/> is null.</exception>
         public static void Mirror(this DBText source, Line3d axis, bool eraseSource)
         {
-            Assert.IsNotNull(source, nameof(source));
-            Assert.IsNotNull(axis, nameof(axis));
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            Throwable.ThrowIfArgumentNull(axis, nameof(axis));
 
             var db = source.Database;
             var tr = db.GetTopTransaction();
@@ -138,13 +137,13 @@ namespace Gile.AutoCAD.Extension
         /// <summary>
         /// P/Invokes the unmanaged acedTextBox method.
         /// </summary>
-        /// <param name="rb">ResultBuffer cotaining the DBtext DXF definition.</param>
+        /// <param name="rb">ResultBuffer containing the DBText DXF definition.</param>
         /// <param name="point1">Minimum point of the bounding box.</param>
         /// <param name="point2">Maximum point of the bounding box.</param>
         /// <returns>RTNORM, if succeeds; RTERROR, otherwise.</returns>
         [System.Security.SuppressUnmanagedCodeSecurity]
-        [DllImport("accore.dll", CharSet = CharSet.Unicode,
-            CallingConvention = CallingConvention.Cdecl, EntryPoint = "acedTextBox")]
-        static extern IntPtr acedTextBox(IntPtr rb, double[] point1, double[] point2);
+        [DllImport("gccore.dll", CharSet = CharSet.Unicode,
+            CallingConvention = CallingConvention.Cdecl, EntryPoint = "gcedTextBox")]
+        private static extern IntPtr acedTextBox(IntPtr rb, double[] point1, double[] point2);
     }
 }
