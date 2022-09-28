@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -14,48 +13,35 @@ namespace Sharper.GstarCAD.Extensions
         /// <summary>
         /// Creates a new empty instance.
         /// </summary>
-        public DisposableList() { }
+        public DisposableList()
+        {
+        }
 
         /// <summary>
         /// Creates a new instance by copying the sequence items.
         /// </summary>
         /// <param name="collection">Sequence whose elements are copied into the new set.</param>
         public DisposableList(IEnumerable<T> collection)
-            : base(collection) { }
+            : base(collection)
+        {
+        }
 
         /// <summary>
         /// Creates a new empty instance.
         /// </summary>
         /// <param name="capacity">Initial capacity</param>
         public DisposableList(int capacity)
-            : base(capacity) { }
+            : base(capacity)
+        {
+        }
 
         /// <summary>
         /// Disposes of all items.
         /// </summary>
         public void Dispose()
         {
-            if (0 >= Count)
-            {
-                return;
-            }
-
-            Exception last = null;
-            var list = this.ToList();
+            this.DisposeAll();
             Clear();
-            foreach (T item in list)
-            {
-                try
-                {
-                    item?.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    last = last ?? ex;
-                }
-            }
-            if (last != null)
-                throw last;
         }
 
         /// <summary>

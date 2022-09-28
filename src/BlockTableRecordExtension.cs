@@ -23,10 +23,10 @@ namespace Sharper.GstarCAD.Extensions
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="blockTableRecord"/> is null.</exception>
         /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
         public static IEnumerable<T> GetObjects<T>(
-          this BlockTableRecord blockTableRecord,
-          OpenMode mode = OpenMode.ForRead,
-          bool openErased = false,
-          bool forceOpenOnLockedLayers = false) where T : Entity
+            this BlockTableRecord blockTableRecord,
+            OpenMode mode = OpenMode.ForRead,
+            bool openErased = false,
+            bool forceOpenOnLockedLayers = false) where T : Entity
         {
             Throwable.ThrowIfArgumentNull(blockTableRecord, nameof(blockTableRecord));
             var tr = blockTableRecord.Database.GetTopTransaction();
@@ -66,14 +66,13 @@ namespace Sharper.GstarCAD.Extensions
             Throwable.ThrowIfArgumentNull(entities, nameof(entities));
             var tr = owner.Database.GetTopTransaction();
             var ids = new ObjectIdCollection();
-            using (var entitySet = new DisposableSet<Entity>(entities))
+            foreach (Entity ent in entities)
             {
-                foreach (Entity ent in entitySet)
-                {
-                    ids.Add(owner.AppendEntity(ent));
-                    tr.AddNewlyCreatedDBObject(ent, true);
-                }
+                ids.Add(owner.AppendEntity(ent));
+                tr.AddNewlyCreatedDBObject(ent, true);
+                ent.Dispose();
             }
+
             return ids;
         }
 
@@ -128,7 +127,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="yScale">Y scale factor.</param>
         /// <param name="zScale">Z scale factor.</param>
         /// <param name="rotation">Rotation</param>
-        /// <param name="attribValues">Collection of key/value pairs (Tag/Value).</param>
+        /// <param name="attributeValues">Collection of key/value pairs (Tag/Value).</param>
         /// <returns>The newly created BlockReference.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="target"/> is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown if <paramref name ="blockName"/> is null or empty.</exception>
@@ -141,7 +140,7 @@ namespace Sharper.GstarCAD.Extensions
             double yScale = 1.0,
             double zScale = 1.0,
             double rotation = 0.0,
-            Dictionary<string, string> attribValues = null)
+            Dictionary<string, string> attributeValues = null)
         {
             Throwable.ThrowIfArgumentNull(target, nameof(target));
             Throwable.ThrowIfStringNullOrWhiteSpace(blockName, nameof(blockName));
@@ -165,11 +164,13 @@ namespace Sharper.GstarCAD.Extensions
                 ObjectContextManager ocm = db.ObjectContextManager;
                 ObjectContextCollection occ = ocm.GetContextCollection("ACDB_ANNOTATIONSCALES");
                 // TODO: GstarCAD has no interface of 'ObjectContexts'
+
                 // Autodesk.AutoCAD.Internal.ObjectContexts.AddContext(br, occ.CurrentContext);
             }
+
             target.Add(blockReference);
 
-            blockReference.AddAttributeReferences(attribValues);
+            blockReference.AddAttributeReferences(attributeValues);
             return blockReference;
         }
 
@@ -182,10 +183,11 @@ namespace Sharper.GstarCAD.Extensions
         {
             Throwable.ThrowIfArgumentNull(target, nameof(target));
 
-            AttributeDefinition[] attDefs = target.GetObjects<AttributeDefinition>().ToArray();
-            foreach (BlockReference blockReference in target.GetBlockReferenceIds(true, false).GetObjects<BlockReference>(OpenMode.ForWrite))
+            AttributeDefinition[] attributeDefinitions = target.GetObjects<AttributeDefinition>().ToArray();
+            foreach (BlockReference blockReference in target.GetBlockReferenceIds(true, false)
+                         .GetObjects<BlockReference>(OpenMode.ForWrite))
             {
-                blockReference.ResetAttributes(attDefs);
+                blockReference.ResetAttributes(attributeDefinitions);
             }
 
             if (!target.IsDynamicBlock)
@@ -194,11 +196,11 @@ namespace Sharper.GstarCAD.Extensions
             target.UpdateAnonymousBlocks();
             foreach (BlockTableRecord blockTableRecord in target.GetAnonymousBlockIds().GetObjects<BlockTableRecord>())
             {
-                attDefs = blockTableRecord.GetObjects<AttributeDefinition>().ToArray();
+                attributeDefinitions = blockTableRecord.GetObjects<AttributeDefinition>().ToArray();
                 foreach (BlockReference br in blockTableRecord.GetBlockReferenceIds(true, false)
                              .GetObjects<BlockReference>(OpenMode.ForWrite))
                 {
-                    br.ResetAttributes(attDefs);
+                    br.ResetAttributes(attributeDefinitions);
                 }
             }
         }

@@ -142,7 +142,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="point2">Maximum point of the bounding box.</param>
         /// <returns>RTNORM, if succeeds; RTERROR, otherwise.</returns>
         [System.Security.SuppressUnmanagedCodeSecurity]
-        [DllImport("gccore.dll", CharSet = CharSet.Unicode,
+        [DllImport("gced.dll", CharSet = CharSet.Unicode,
             CallingConvention = CallingConvention.Cdecl, EntryPoint = "gcedTextBox")]
         private static extern IntPtr acedTextBox(IntPtr rb, double[] point1, double[] point2);
     }

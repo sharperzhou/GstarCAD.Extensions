@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="GstarCADNET" Version="22.0.0" />
+    <PackageReference Include="JetBrains.Annotations" Version="2022.1.0" />
   </ItemGroup>
 </Project>

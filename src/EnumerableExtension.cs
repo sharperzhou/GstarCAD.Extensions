@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
 using Exception = GrxCAD.Runtime.Exception;
@@ -52,19 +51,14 @@ namespace Sharper.GstarCAD.Extensions
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
 
-            if (!source.Any())
-            {
-                yield break;
-            }
-
-            var tr = source.First().Database.GetTopTransaction();
+            Transaction tr = null;
             var rxClass = RXObject.GetClass(typeof(T));
             foreach (ObjectId id in source)
             {
+                tr = tr ?? id.Database.GetTopTransaction();
+
                 if (!id.ObjectClass.IsDerivedFrom(rxClass))
-                {
                     continue;
-                }
 
                 if (!id.IsErased || openErased)
                     yield return (T)tr.GetObject(id, mode, openErased, forceOpenOnLockedLayers);
@@ -108,10 +102,6 @@ namespace Sharper.GstarCAD.Extensions
         public static void DisposeAll<T>(this IEnumerable<T> source) where T : IDisposable
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
-            if (!source.Any())
-            {
-                return;
-            }
 
             System.Exception last = null;
             foreach (T item in source)

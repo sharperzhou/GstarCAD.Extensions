@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -15,7 +14,8 @@ namespace Sharper.GstarCAD.Extensions
         /// Creates a new empty instance using the default comparer.
         /// </summary>
         public DisposableSet()
-        { }
+        {
+        }
 
         /// <summary>
         /// Creates a new instance using the default comparer by copying the sequence items.
@@ -23,7 +23,8 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="collection">Sequence whose elements are copied into the new set.</param>
         public DisposableSet(IEnumerable<T> collection)
             : base(collection)
-        { }
+        {
+        }
 
         /// <summary>
         /// Creates a new empty instance using the specified comparer.
@@ -31,7 +32,8 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="comparer">IEqualityComparer&lt;T&gt; implementation.</param>
         public DisposableSet(IEqualityComparer<T> comparer)
             : base(comparer)
-        { }
+        {
+        }
 
         /// <summary>
         /// Creates a new instance using the specified comparer by copying the sequence items.
@@ -40,32 +42,16 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="comparer">IEqualityComparer&lt;T&gt; implementation.</param>
         public DisposableSet(IEnumerable<T> collection, IEqualityComparer<T> comparer)
             : base(collection, comparer)
-        { }
+        {
+        }
 
         /// <summary>
         /// Disposes of all items.
         /// </summary>
         public void Dispose()
         {
-            if (Count <= 0)
-                return;
-
-            Exception last = null;
-            var list = this.ToList();
+            this.DisposeAll();
             Clear();
-            foreach (T item in list)
-            {
-                try
-                {
-                    item?.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    last = last ?? ex;
-                }
-            }
-            if (last != null)
-                throw last;
         }
 
         /// <summary>
@@ -86,8 +72,11 @@ namespace Sharper.GstarCAD.Extensions
         public IEnumerable<T> RemoveRange(IEnumerable<T> items)
         {
             Throwable.ThrowIfArgumentNull(items, nameof(items));
-            ExceptWith(items);
-            return items;
+            foreach (T item in items)
+            {
+                if (Remove(item))
+                    yield return item;
+            }
         }
     }
 }
