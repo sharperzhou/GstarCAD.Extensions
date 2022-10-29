@@ -16,7 +16,18 @@ namespace Sharper.GstarCAD.Extensions
         /// <summary>
         /// Gets the active Document object.
         /// </summary>
-        public static Document Document => Application.DocumentManager.MdiActiveDocument;
+        public static Document Document
+        {
+            get
+            {
+                if (Application.DocumentManager.MdiActiveDocument != null)
+                    return Application.DocumentManager.MdiActiveDocument;
+
+                var type = typeof(DocumentCollection);
+                return type.GetProperty("CurrentDocument", typeof(Document))?.GetGetMethod()
+                    ?.Invoke(Application.DocumentManager, null) as Document;
+            }
+        }
 
         /// <summary>
         /// Gets the active Database object.
@@ -27,5 +38,10 @@ namespace Sharper.GstarCAD.Extensions
         /// Gets the active Editor object.
         /// </summary>
         public static Editor Editor => Document.Editor;
+
+        /// <summary>
+        /// Start new transaction in active Database
+        /// </summary>
+        public static Transaction StartTransaction() => Database.TransactionManager.StartTransaction();
     }
 }

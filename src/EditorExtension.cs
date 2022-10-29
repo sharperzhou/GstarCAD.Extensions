@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using GrxCAD.ApplicationServices;
 using GrxCAD.DatabaseServices;
@@ -19,10 +20,14 @@ namespace Sharper.GstarCAD.Extensions
         /// </summary>
         /// <param name="ed">Instance to which the method applies.</param>
         /// <param name="ext">Extents of the zoom.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="ed"/> is null.</exception>
-        public static void Zoom(this Editor ed, Extents3d ext)
+        /// <exception cref="ArgumentException">Thrown if <paramref name="ext"/> is an invalid extents.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name ="ed"/> is null.</exception>
+        public static void ZoomExtents(this Editor ed, Extents3d ext)
         {
             Throwable.ThrowIfArgumentNull(ed, nameof(ed));
+            if (ext.p1 > ext.p4 || ext.p2 > ext.p5 || ext.p3 > ext.p6)
+                throw new ArgumentException("Invalid extents", nameof(ext));
+
             using (ViewTableRecord view = ed.GetCurrentView())
             {
                 ext.TransformBy(view.WorldToEye());
@@ -44,10 +49,10 @@ namespace Sharper.GstarCAD.Extensions
         {
             Database db = ed.Document.Database;
             db.UpdateExt(false);
-            Extents3d ext = (short)Application.GetSystemVariable("cvport") == 1 ?
-                new Extents3d(db.Pextmin, db.Pextmax) :
-                new Extents3d(db.Extmin, db.Extmax);
-            ed.Zoom(ext);
+            Extents3d ext = (short)Application.GetSystemVariable("cvport") == 1
+                ? new Extents3d(db.Pextmin, db.Pextmax)
+                : new Extents3d(db.Extmin, db.Extmax);
+            ed.ZoomExtents(ext);
         }
 
         /// <summary>
@@ -57,12 +62,12 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="p1">First window corner.</param>
         /// <param name="p2">Opposite window corner.</param>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="ed"/> is null.</exception>
-        public static void ZoomWindow(this Editor ed, Point3d p1, Point3d p2)
+        public static void ZoomExtents(this Editor ed, Point3d p1, Point3d p2)
         {
-            using (var line = new Line(p1, p2))
-            {
-                ed.Zoom(line.GeometricExtents);
-            }
+            Extents3d ex = new Extents3d();
+            ex.AddPoint(p1);
+            ex.AddPoint(p2);
+            ed.ZoomExtents(ex);
         }
 
         /// <summary>
@@ -71,23 +76,23 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="ed">Instance to which the method applies.</param>
         /// <param name="ids">Collection of the entities ObjectId on which to zoom.</param>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="ed"/> is null.</exception>
-        public static void ZoomObjects(this Editor ed, IEnumerable<ObjectId> ids)
+        public static void ZoomExtents(this Editor ed, IEnumerable<ObjectId> ids)
         {
             Throwable.ThrowIfArgumentNull(ed, nameof(ed));
             Throwable.ThrowIfArgumentNull(ids, nameof(ids));
             using (Transaction tr = ed.Document.TransactionManager.StartTransaction())
             {
-                //Extents3d ext = ids
-                //    .GetObjects<Entity>()
-                //    .Select(ent => ent.GeometricExtents)
-                //    .Aggregate((e1, e2) => { e1.AddExtents(e2); return e1; });
                 Extents3d ext = ids
                     .GetObjects<Entity>()
                     .Select(ent => ent.Bounds)
                     .Where(b => b.HasValue)
                     .Select(b => b.Value)
-                    .Aggregate((e1, e2) => { e1.AddExtents(e2); return e1; });
-                ed.Zoom(ext);
+                    .Aggregate((e1, e2) =>
+                    {
+                        e1.AddExtents(e2);
+                        return e1;
+                    });
+                ed.ZoomExtents(ext);
                 tr.Commit();
             }
         }
@@ -143,7 +148,8 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The selection result.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="ed"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
-        public static PromptSelectionResult GetSelection(this Editor ed, PromptSelectionOptions options, SelectionFilter filter, System.Predicate<ObjectId> predicate) =>
+        public static PromptSelectionResult GetSelection(this Editor ed, PromptSelectionOptions options,
+            SelectionFilter filter, Predicate<ObjectId> predicate) =>
             ed.GetPredicatedSelection(predicate, options, filter);
 
         /// <summary>
@@ -155,7 +161,8 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The selection result.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="ed"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
-        public static PromptSelectionResult GetSelection(this Editor ed, PromptSelectionOptions options, System.Predicate<ObjectId> predicate) =>
+        public static PromptSelectionResult GetSelection(this Editor ed, PromptSelectionOptions options,
+            Predicate<ObjectId> predicate) =>
             ed.GetPredicatedSelection(predicate, options);
 
         /// <summary>
@@ -167,7 +174,8 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The selection result.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="ed"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
-        public static PromptSelectionResult GetSelection(this Editor ed, SelectionFilter filter, System.Predicate<ObjectId> predicate) =>
+        public static PromptSelectionResult GetSelection(this Editor ed, SelectionFilter filter,
+            Predicate<ObjectId> predicate) =>
             ed.GetPredicatedSelection(predicate, null, filter);
 
         /// <summary>
@@ -178,12 +186,12 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The selection result.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="ed"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="predicate"/> is null.</exception>
-        public static PromptSelectionResult GetSelection(this Editor ed, System.Predicate<ObjectId> predicate) =>
+        public static PromptSelectionResult GetSelection(this Editor ed, Predicate<ObjectId> predicate) =>
             ed.GetPredicatedSelection(predicate);
 
         private static PromptSelectionResult GetPredicatedSelection(
             this Editor ed,
-            System.Predicate<ObjectId> predicate,
+            Predicate<ObjectId> predicate,
             PromptSelectionOptions options = null,
             SelectionFilter filter = null)
         {
@@ -210,6 +218,7 @@ namespace Sharper.GstarCAD.Extensions
             {
                 result = filter == null ? ed.GetSelection(options) : ed.GetSelection(options, filter);
             }
+
             ed.SelectionAdded -= OnSelectionAdded;
             return result;
         }

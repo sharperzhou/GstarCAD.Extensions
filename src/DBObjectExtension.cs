@@ -1,4 +1,5 @@
-﻿using GrxCAD.DatabaseServices;
+﻿using System.Linq;
+using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
 
 namespace Sharper.GstarCAD.Extensions
@@ -36,61 +37,19 @@ namespace Sharper.GstarCAD.Extensions
         /// Gets or creates the extension dictionary.
         /// </summary>
         /// <param name="source">Instance to which the method applies.</param>
+        /// <param name="mode">Open mode to obtain in.</param>
         /// <returns>The extension dictionary.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        public static DBDictionary GetOrCreateExtensionDictionary(this DBObject source)
+        public static DBDictionary GetOrCreateExtensionDictionary(this DBObject source,
+            OpenMode mode = OpenMode.ForRead)
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
             if (source.ExtensionDictionary == ObjectId.Null)
             {
-                source.OpenForWrite();
-                source.CreateExtensionDictionary();
+                source.UpgradeWrite().CreateExtensionDictionary();
             }
 
-            return source.ExtensionDictionary.GetObject<DBDictionary>();
-        }
-
-        /// <summary>
-        /// Gets the xrecord data of the extension dictionary of the object.
-        /// </summary>
-        /// <param name="source">Instance to which the method applies.</param>
-        /// <param name="key">Xrecord key.</param>
-        /// <returns>The xrecord data or null if the xrecord does not exists.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown if <paramref name ="key"/> is null or empty.</exception>
-        public static ResultBuffer GetXDictionaryXrecordData(this DBObject source, string key)
-        {
-            Throwable.ThrowIfArgumentNull(source, nameof(source));
-            Throwable.ThrowIfStringNullOrWhiteSpace(key, nameof(key));
-            return source.TryGetExtensionDictionary(out DBDictionary dict) ? dict.GetXrecordData(key) : null;
-        }
-
-        /// <summary>
-        /// Sets the xrecord data of the extension dictionary of the object.
-        /// </summary>
-        /// <param name="target">Instance to which the method applies.</param>
-        /// <param name="key">The xrecord key.</param>
-        /// <param name="values">The new xrecord data.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="target"/> is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown if <paramref name ="key"/> is null or empty.</exception>
-        public static void SetXDictionaryXrecordData(this DBObject target, string key, params TypedValue[] values)
-        {
-            target.SetXDictionaryXrecordData(key, new ResultBuffer(values));
-        }
-
-        /// <summary>
-        /// Sets the xrecord data of the extension dictionary of the object.
-        /// </summary>
-        /// <param name="target">Instance to which the method applies.</param>
-        /// <param name="key">The xrecord key.</param>
-        /// <param name="data">The new xrecord data.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="target"/> is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown if <paramref name ="key"/> is null or empty.</exception>
-        public static void SetXDictionaryXrecordData(this DBObject target, string key, ResultBuffer data)
-        {
-            Throwable.ThrowIfArgumentNull(target, nameof(target));
-            Throwable.ThrowIfStringNullOrWhiteSpace(key, nameof(key));
-            target.GetOrCreateExtensionDictionary().SetXrecordData(key, data);
+            return source.ExtensionDictionary.GetObject<DBDictionary>(mode);
         }
 
         /// <summary>
@@ -102,41 +61,70 @@ namespace Sharper.GstarCAD.Extensions
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="data"/> is null.</exception>
         /// <exception cref="Exception">eNoActiveTransactions is thrown if there's no active transaction.</exception>
         /// <exception cref="Exception">eBadDxfSequence is thrown if the result buffer is not valid.</exception>
+        /// <remarks>
+        /// The <paramref name="data"/> only if (1001, &lt;regAppName&gt;)
+        /// will remove the specified application name of xdata.
+        /// </remarks>
         public static void SetXDataForApplication(this DBObject target, ResultBuffer data)
         {
             Throwable.ThrowIfArgumentNull(target, nameof(target));
             Throwable.ThrowIfArgumentNull(data, nameof(data));
             Database db = target.Database;
             Transaction tr = db.GetTopTransaction();
-            var typedValue = data.AsArray()[0];
+            var typedValue = data.Cast<TypedValue>().FirstOrDefault();
             if (typedValue.TypeCode != 1001)
                 throw new Exception(ErrorStatus.BadDxfSequence);
             string appName = (string)typedValue.Value;
             RegAppTable regAppTable = db.RegAppTableId.GetObject<RegAppTable>();
             if (!regAppTable.Has(appName))
             {
-                var regApp = new RegAppTableRecord();
-                regApp.Name = appName;
-                regAppTable.OpenForWrite();
-                regAppTable.Add(regApp);
-                tr.AddNewlyCreatedDBObject(regApp, true);
+                using (var regApp = new RegAppTableRecord { Name = appName })
+                {
+                    regAppTable.UpgradeWrite().Add(regApp);
+                    tr.AddNewlyCreatedDBObject(regApp, true);
+                }
             }
 
             target.XData = data;
         }
 
         /// <summary>
-        /// Opens the object for write.
+        /// Sets the object extended data (xdata) for the application.
         /// </summary>
-        /// <param name="dbObj">Instance to which the method applies.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="dbObj"/> is null.</exception>
-        /// <exception cref="Exception">eNoActiveTransactions is thrown if there's no active transaction.</exception>
-        public static void OpenForWrite(this DBObject dbObj)
+        /// <param name="target">Instance to which the method applies.</param>
+        /// <param name="appName">The application name.</param>
+        /// <param name="typedValues">Typed values below the application name field.</param>
+        /// <remarks>
+        /// Setting zero length array of <paramref name="typedValues"/> will
+        /// remove the specified application name of xdata.
+        /// </remarks>
+        public static void SetXDataForApplication(this DBObject target, string appName, params TypedValue[] typedValues)
         {
-            Throwable.ThrowIfArgumentNull(dbObj, nameof(dbObj));
+            ResultBuffer resultBuffer = new ResultBuffer(new TypedValue(1001, appName));
+            if (typedValues != null)
+            {
+                foreach (TypedValue typedValue in typedValues)
+                {
+                    resultBuffer.Add(typedValue);
+                }
+            }
 
-            if (!dbObj.IsWriteEnabled)
-                dbObj.Database.GetTopTransaction().GetObject(dbObj.ObjectId, OpenMode.ForWrite);
+            target.SetXDataForApplication(resultBuffer);
+        }
+
+        /// <summary>
+        /// Upgrade the object for write.
+        /// </summary>
+        /// <param name="dbObject">Instance to which the method applies.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="dbObject"/> is null.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there's no active transaction.</exception>
+        public static T UpgradeWrite<T>(this T dbObject) where T : DBObject
+        {
+            Throwable.ThrowIfArgumentNull(dbObject, nameof(dbObject));
+
+            if (!dbObject.IsWriteEnabled)
+                dbObject.Database.GetTopTransaction().GetObject(dbObject.ObjectId, OpenMode.ForWrite);
+            return dbObject;
         }
     }
 }

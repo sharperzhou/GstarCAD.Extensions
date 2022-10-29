@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
 
@@ -56,8 +57,7 @@ namespace Sharper.GstarCAD.Extensions
             Throwable.ThrowIfArgumentNull(parent, nameof(parent));
             Throwable.ThrowIfStringNullOrWhiteSpace(key, nameof(key));
 
-            dict = null;
-            return parent.Contains(key) && parent.GetAt(key).TryGetObject(out dict, mode, openErased);
+            return parent.TryGetObject(key, out dict, mode, openErased);
         }
 
         /// <summary>
@@ -67,25 +67,24 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="source">Instance to which the method applies.</param>
         /// <param name="mode">Open mode to obtain in.</param>
         /// <param name="openErased">Value indicating whether to obtain erased objects.</param>
+        /// <param name="forceOpenOnLockedLayers">Value indicating if locked layers should be opened.</param>
+        /// <param name="matchExact">Match the type exactly.</param>
         /// <returns>The sequence of collected objects.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
         public static IEnumerable<T> GetObjects<T>(
             this DBDictionary source,
             OpenMode mode = OpenMode.ForRead,
-            bool openErased = false)
+            bool openErased = false,
+            bool forceOpenOnLockedLayers = false,
+            bool matchExact = false)
             where T : DBObject
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
-            var tr = source.Database.GetTopTransaction();
-            var rxc = RXObject.GetClass(typeof(T));
-            foreach (DBDictionaryEntry entry in openErased ? source.IncludingErased : source)
-            {
-                if (entry.Value.ObjectClass.IsDerivedFrom(rxc))
-                {
-                    yield return (T)tr.GetObject(entry.Value, mode, openErased, false);
-                }
-            }
+            source = openErased ? source.IncludingErased : source;
+            return source.Cast<DBDictionaryEntry>()
+                .Select(x => x.Value)
+                .GetObjects<T>(mode, openErased, forceOpenOnLockedLayers, matchExact);
         }
 
         /// <summary>
@@ -106,7 +105,8 @@ namespace Sharper.GstarCAD.Extensions
             {
                 return parent.GetAt(name).GetObject<DBDictionary>();
             }
-            parent.OpenForWrite();
+
+            parent.UpgradeWrite();
             var dict = new DBDictionary();
             parent.SetAt(name, dict);
             tr.AddNewlyCreatedDBObject(dict, true);
@@ -130,6 +130,7 @@ namespace Sharper.GstarCAD.Extensions
             {
                 return null;
             }
+
             var id = (ObjectId)source[key];
             return id.TryGetObject(out Xrecord xrecord) ? xrecord.Data : null;
         }
@@ -166,11 +167,12 @@ namespace Sharper.GstarCAD.Extensions
             }
             else
             {
-                target.OpenForWrite();
+                target.UpgradeWrite();
                 xrecord = new Xrecord();
                 target.SetAt(key, xrecord);
                 target.Database.TransactionManager.TopTransaction.AddNewlyCreatedDBObject(xrecord, true);
             }
+
             xrecord.Data = data;
         }
     }

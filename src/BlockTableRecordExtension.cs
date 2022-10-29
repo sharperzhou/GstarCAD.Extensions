@@ -2,7 +2,6 @@
 using System.Linq;
 using GrxCAD.DatabaseServices;
 using GrxCAD.Geometry;
-using GrxCAD.Runtime;
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -19,36 +18,21 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="mode">Open mode to obtain in.</param>
         /// <param name="openErased">Value indicating whether to obtain erased objects.</param>
         /// <param name="forceOpenOnLockedLayers">Value indicating if locked layers should be opened.</param>
+        /// <param name="matchExact">Match the type exactly.</param>
         /// <returns>The sequence of opened objects.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="blockTableRecord"/> is null.</exception>
-        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
+        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
         public static IEnumerable<T> GetObjects<T>(
             this BlockTableRecord blockTableRecord,
             OpenMode mode = OpenMode.ForRead,
             bool openErased = false,
-            bool forceOpenOnLockedLayers = false) where T : Entity
+            bool forceOpenOnLockedLayers = false,
+            bool matchExact = false) where T : Entity
         {
             Throwable.ThrowIfArgumentNull(blockTableRecord, nameof(blockTableRecord));
-            var tr = blockTableRecord.Database.GetTopTransaction();
             BlockTableRecord source = openErased ? blockTableRecord.IncludingErased : blockTableRecord;
-            if (typeof(T) == typeof(Entity))
-            {
-                foreach (ObjectId id in source)
-                {
-                    yield return (T)tr.GetObject(id, mode, openErased, forceOpenOnLockedLayers);
-                }
-            }
-            else
-            {
-                var rxClass = RXObject.GetClass(typeof(T));
-                foreach (ObjectId id in source)
-                {
-                    if (id.ObjectClass.IsDerivedFrom(rxClass))
-                    {
-                        yield return (T)tr.GetObject(id, mode, openErased, forceOpenOnLockedLayers);
-                    }
-                }
-            }
+
+            return source.Cast<ObjectId>().GetObjects<T>(mode, openErased, forceOpenOnLockedLayers, matchExact);
         }
 
         /// <summary>
@@ -59,7 +43,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The collection of added entities ObjectId.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="owner"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="entities"/> is null.</exception>
-        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
+        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
         public static ObjectIdCollection Add(this BlockTableRecord owner, IEnumerable<Entity> entities)
         {
             Throwable.ThrowIfArgumentNull(owner, nameof(owner));
@@ -70,7 +54,6 @@ namespace Sharper.GstarCAD.Extensions
             {
                 ids.Add(owner.AppendEntity(ent));
                 tr.AddNewlyCreatedDBObject(ent, true);
-                ent.Dispose();
             }
 
             return ids;
@@ -84,10 +67,10 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The collection of added entities ObjectId.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="owner"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="entities"/> is null.</exception>
-        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
-        public static ObjectIdCollection AddRange(this BlockTableRecord owner, params Entity[] entities)
+        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
+        public static ObjectIdCollection Add(this BlockTableRecord owner, params Entity[] entities)
         {
-            return owner.Add(entities);
+            return Add(owner, (IEnumerable<Entity>)entities);
         }
 
         /// <summary>
@@ -98,27 +81,16 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The ObjectId of added entity.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="owner"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="entity"/> is null.</exception>
-        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
+        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
         public static ObjectId Add(this BlockTableRecord owner, Entity entity)
         {
-            Throwable.ThrowIfArgumentNull(owner, nameof(owner));
-            Throwable.ThrowIfArgumentNull(entity, nameof(entity));
-            var tr = owner.Database.GetTopTransaction();
-            try
-            {
-                ObjectId id = owner.AppendEntity(entity);
-                tr.AddNewlyCreatedDBObject(entity, true);
-                return id;
-            }
-            catch
-            {
-                entity.Dispose();
-                throw;
-            }
+            return Add(owner, new[] { entity })[0];
         }
 
         /// <summary>
-        /// Inserts a block reference.
+        /// Inserts a block reference to target BlockTableRecord (BlockDefinition) from another source BlockTableRecord.
+        /// If the source is not existing in BlockTable, it try to INSERT external dwg as the source from CAD
+        /// searching path by the <paramref name="blockName"/>.
         /// </summary>
         /// <param name="target">Instance to which the method applies.</param>
         /// <param name="blockName">Block name.</param>
@@ -131,8 +103,9 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The newly created BlockReference.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="target"/> is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown if <paramref name ="blockName"/> is null or empty.</exception>
-        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
-        public static BlockReference InsertBlockReference(
+        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
+        /// <exception cref="GrxCAD.Runtime.Exception">eNullObjectId is thrown if there is no BlockTableRecord with name <paramref name="blockName"/> after inserting.</exception>
+        public static BlockReference InsertBlockFrom(
             this BlockTableRecord target,
             string blockName,
             Point3d insertPoint,
@@ -149,23 +122,19 @@ namespace Sharper.GstarCAD.Extensions
 
             BlockTable blockTable = db.BlockTableId.GetObject<BlockTable>();
 
-            ObjectId btrId = blockTable.GetBlock(blockName);
+            ObjectId blockTableRecordId = blockTable.GetBlockDefinition(blockName);
+            Throwable.ThrowIfObjectIdNull(blockTableRecordId, nameof(blockTableRecordId));
 
-            if (btrId == ObjectId.Null)
-                return null;
-
-            BlockReference blockReference = new BlockReference(insertPoint, btrId)
+            BlockReference blockReference = new BlockReference(insertPoint, blockTableRecordId)
             {
                 ScaleFactors = new Scale3d(xScale, yScale, zScale), Rotation = rotation
             };
-            BlockTableRecord blockTableRecord = btrId.GetObject<BlockTableRecord>();
+            BlockTableRecord blockTableRecord = blockTableRecordId.GetObject<BlockTableRecord>();
             if (blockTableRecord.Annotative == AnnotativeStates.True)
             {
                 ObjectContextManager ocm = db.ObjectContextManager;
                 ObjectContextCollection occ = ocm.GetContextCollection("ACDB_ANNOTATIONSCALES");
-                // TODO: GstarCAD has no interface of 'ObjectContexts'
-
-                // Autodesk.AutoCAD.Internal.ObjectContexts.AddContext(br, occ.CurrentContext);
+                blockReference.AddContext(occ.CurrentContext);
             }
 
             target.Add(blockReference);

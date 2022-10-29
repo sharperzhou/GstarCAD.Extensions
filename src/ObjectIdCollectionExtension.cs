@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
 
@@ -9,7 +10,6 @@ namespace Sharper.GstarCAD.Extensions
     /// </summary>
     public static class ObjectIdCollectionExtension
     {
-
         /// <summary>
         /// Opens the objects which type matches to the given one, and return them.
         /// </summary>
@@ -18,6 +18,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="mode">Open mode to obtain in.</param>
         /// <param name="openErased">Value indicating whether to obtain erased objects.</param>
         /// <param name="forceOpenOnLockedLayers">Value indicating if locked layers should be opened.</param>
+        /// <param name="matchExact">Match the type exactly.</param>
         /// <returns>The sequence of opened objects.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
@@ -25,24 +26,13 @@ namespace Sharper.GstarCAD.Extensions
             this ObjectIdCollection source,
             OpenMode mode = OpenMode.ForRead,
             bool openErased = false,
-            bool forceOpenOnLockedLayers = false)
+            bool forceOpenOnLockedLayers = false,
+            bool matchExact = false)
             where T : DBObject
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
-            if (source.Count <= 0)
-                yield break;
-
-            var tr = source[0].Database.GetTopTransaction();
-
-            var rxClass = RXObject.GetClass(typeof(T));
-            foreach (ObjectId id in source)
-            {
-                if (id.ObjectClass != rxClass && !id.ObjectClass.IsDerivedFrom(rxClass))
-                    continue;
-
-                if (!id.IsErased || openErased)
-                    yield return (T)tr.GetObject(id, mode, openErased, forceOpenOnLockedLayers);
-            }
+            return source.Cast<ObjectId>()
+                .GetObjects<T>(mode, openErased, forceOpenOnLockedLayers, matchExact);
         }
     }
 }

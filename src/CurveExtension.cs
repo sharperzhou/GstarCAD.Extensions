@@ -69,11 +69,11 @@ namespace Sharper.GstarCAD.Extensions
             {
                 case OffsetSide.In:
                     result = areaRight < areaLeft ? offsetRight : offsetLeft;
-                    disposed = !(areaRight < areaLeft) ? offsetLeft : offsetRight;
+                    disposed = !(areaRight < areaLeft) ? offsetRight : offsetLeft;
                     break;
                 case OffsetSide.Out:
                     result = areaRight < areaLeft ? offsetLeft : offsetRight;
-                    disposed = !(areaRight < areaLeft) ? offsetRight : offsetLeft;
+                    disposed = !(areaRight < areaLeft) ? offsetLeft : offsetRight;
                     break;
                 case OffsetSide.Left:
                     result = offsetLeft;
@@ -84,7 +84,7 @@ namespace Sharper.GstarCAD.Extensions
                     disposed = offsetLeft;
                     break;
                 case OffsetSide.Both:
-                    result = offsetRight.Concat(offsetLeft);
+                    result = offsetLeft.Concat(offsetRight);
                     disposed = null;
                     break;
                 default:

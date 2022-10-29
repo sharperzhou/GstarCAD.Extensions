@@ -104,8 +104,9 @@ namespace Sharper.GstarCAD.Extensions
         /// Gets the layouts names.
         /// </summary>
         /// <param name="db">Instance to which the method applies.</param>
+        /// <param name="exceptModel">Value indicating if the model space layout is left out.</param>
         /// <returns>The sequence of layout names.</returns>
-        public static IEnumerable<string> GetLayoutNames(this Database db) =>
-            db.GetLayouts().OrderBy(l => l.TabOrder).Select(l => l.LayoutName);
+        public static IEnumerable<string> GetLayoutNames(this Database db, bool exceptModel = true) =>
+            db.GetLayouts(exceptModel).OrderBy(l => l.TabOrder).Select(l => l.LayoutName);
     }
 }

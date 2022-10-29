@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using GrxCAD.ApplicationServices;
 using GrxCAD.DatabaseServices;
 using GrxCAD.Geometry;
 
@@ -20,31 +22,17 @@ namespace Sharper.GstarCAD.Extensions
         {
             Throwable.ThrowIfArgumentNull(dbText, nameof(dbText));
 
-            int mirrored = dbText.IsMirroredInX ? 2 : 0;
-            mirrored |= dbText.IsMirroredInY ? 4 : 0;
-            var rb = new ResultBuffer(
-                    new TypedValue(1, dbText.TextString),
-                    new TypedValue(40, dbText.Height),
-                    new TypedValue(41, dbText.WidthFactor),
-                    new TypedValue(51, dbText.Oblique),
-                    new TypedValue(7, dbText.TextStyleName),
-                    new TypedValue(71, mirrored),
-                    new TypedValue(72, (int)dbText.HorizontalMode),
-                    new TypedValue(73, (int)dbText.VerticalMode));
+            GetTextBox(dbText, out double[] point1, out double[] point2);
 
             var transform =
                 Matrix3d.Displacement(dbText.Position.GetAsVector()) *
                 Matrix3d.Rotation(dbText.Rotation, dbText.Normal, Point3d.Origin) *
                 Matrix3d.PlaneToWorld(new Plane(Point3d.Origin, dbText.Normal));
 
-            double[] point1 = new double[3];
-            double[] point2 = new double[3];
-            acedTextBox(rb.UnmanagedObject, point1, point2);
-
             return new Point3d(
-                (point1[0] + point2[0]) / 2.0,
-                (point1[1] + point2[1]) / 2.0,
-                (point1[2] + point2[2]) / 2.0)
+                    (point1[0] + point2[0]) / 2.0,
+                    (point1[1] + point2[1]) / 2.0,
+                    (point1[2] + point2[2]) / 2.0)
                 .TransformBy(transform);
         }
 
@@ -58,22 +46,7 @@ namespace Sharper.GstarCAD.Extensions
         {
             Throwable.ThrowIfArgumentNull(dbText, nameof(dbText));
 
-            int mirrored = dbText.IsMirroredInX ? 2 : 0;
-            mirrored |= dbText.IsMirroredInY ? 4 : 0;
-            var rb = new ResultBuffer(
-                    new TypedValue(1, dbText.TextString),
-                    new TypedValue(40, dbText.Height),
-                    new TypedValue(41, dbText.WidthFactor),
-                    new TypedValue(51, dbText.Oblique),
-                    new TypedValue(7, dbText.TextStyleName),
-                    new TypedValue(71, mirrored),
-                    new TypedValue(72, (int)dbText.HorizontalMode),
-                    new TypedValue(73, (int)dbText.VerticalMode));
-
-            double[] point1 = new double[3];
-            double[] point2 = new double[3];
-
-            acedTextBox(rb.UnmanagedObject, point1, point2);
+            GetTextBox(dbText, out double[] point1, out double[] point2);
 
             var transform =
                 Matrix3d.Displacement(dbText.Position.GetAsVector()) *
@@ -95,43 +68,63 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="source">Instance to which the method applies.</param>
         /// <param name="axis">Axis of the mirroring operation.</param>
         /// <param name="eraseSource">Value indicating if the source block reference have to be erased.</param>
+        /// <returns>
+        /// The mirrored <see cref="DBText"/> if <paramref name="eraseSource"/> is false,
+        /// otherwise is <paramref name="source"/> self.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="axis"/> is null.</exception>
-        public static void Mirror(this DBText source, Line3d axis, bool eraseSource)
+        public static DBText Mirror(this DBText source, Line3d axis, bool eraseSource)
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
             Throwable.ThrowIfArgumentNull(axis, nameof(axis));
+            Throwable.ThrowIfObjectIdNull(source.ObjectId, nameof(source));
 
-            var db = source.Database;
-            var tr = db.GetTopTransaction();
+            DBText mirrored = eraseSource ? source.UpgradeWrite() : (DBText)source.Clone();
 
-            DBText mirrored;
-            if (eraseSource)
-            {
-                mirrored = source;
-                if (!mirrored.IsWriteEnabled)
-                {
-                    tr.GetObject(mirrored.ObjectId, OpenMode.ForWrite);
-                }
-            }
-            else
-            {
-                var ids = new ObjectIdCollection(new[] { source.ObjectId });
-                var mapping = new IdMapping();
-                db.DeepCloneObjects(ids, db.CurrentSpaceId, mapping, false);
-                mirrored = (DBText)tr.GetObject(mapping[source.ObjectId].Value, OpenMode.ForWrite);
-            }
             mirrored.TransformBy(Matrix3d.Mirroring(axis));
 
-            if (!db.Mirrtext)
-            {
-                var pts = mirrored.GetTextBoxCorners();
-                var cen = new LineSegment3d(pts[0], pts[2]).MidPoint;
-                var rotAxis = Math.Abs(axis.Direction.X) < Math.Abs(axis.Direction.Y) ?
-                    pts[0].GetVectorTo(pts[3]) :
-                    pts[0].GetVectorTo(pts[1]);
-                mirrored.TransformBy(Matrix3d.Rotation(Math.PI, rotAxis, cen));
-            }
+            if (source.Database.Mirrtext)
+                return mirrored;
+
+            var pts = mirrored.GetTextBoxCorners();
+            var cen = new LineSegment3d(pts[0], pts[2]).MidPoint;
+            var rotAxis = Math.Abs(axis.Direction.X) < Math.Abs(axis.Direction.Y)
+                ? pts[0].GetVectorTo(pts[3])
+                : pts[0].GetVectorTo(pts[1]);
+            mirrored.TransformBy(Matrix3d.Rotation(Math.PI, rotAxis, cen));
+
+            return mirrored;
+        }
+
+        /// <summary>
+        /// Get bounding box(different between <see cref="DBText.GeometricExtents"/>) of text.
+        /// </summary>
+        /// <param name="dbText">Text object.</param>
+        /// <param name="point1">Minimum (X,Y) coordinates of the box.</param>
+        /// <param name="point2">Maximum (X,Y) coordinates of the box</param>
+        /// <exception cref="InvalidOperationException">Thrown if result of calling <see cref="acedTextBox"/> is RTERROR.</exception>
+        /// <remarks>Text box of <see cref="DBText"/> may not be parallel to X/Y axis</remarks>
+        private static void GetTextBox(DBText dbText, out double[] point1, out double[] point2)
+        {
+            // TODO: No test for AttributeDefinition/AttributeReference
+            int mirrored = dbText.IsMirroredInX ? 2 : 0;
+            mirrored |= dbText.IsMirroredInY ? 4 : 0;
+            var rb = new ResultBuffer(
+                new TypedValue(1, dbText.TextString),
+                new TypedValue(40, dbText.Height),
+                new TypedValue(41, dbText.WidthFactor),
+                new TypedValue(51, dbText.Oblique),
+                new TypedValue(7, dbText.TextStyleName),
+                new TypedValue(71, mirrored),
+                new TypedValue(72, (int)dbText.HorizontalMode),
+                new TypedValue(73, (int)dbText.VerticalMode));
+
+            point1 = new double[3];
+            point2 = new double[3];
+
+            if (5100 != acedTextBox(rb.ResbufObject, point1, point2))
+                throw new InvalidOperationException(
+                    $"Get text box errors, ERRNO: {Application.GetSystemVariable("ERRNO")}");
         }
 
         /// <summary>
@@ -144,6 +137,31 @@ namespace Sharper.GstarCAD.Extensions
         [System.Security.SuppressUnmanagedCodeSecurity]
         [DllImport("gced.dll", CharSet = CharSet.Unicode,
             CallingConvention = CallingConvention.Cdecl, EntryPoint = "gcedTextBox")]
-        private static extern IntPtr acedTextBox(IntPtr rb, double[] point1, double[] point2);
+        private static extern int gcedTextBox(IntPtr rb, double[] point1, double[] point2);
+
+        /// <summary>
+        /// P/Invokes the unmanaged acedTextBox method.
+        /// </summary>
+        /// <param name="rb">ResultBuffer containing the DBText DXF definition.</param>
+        /// <param name="point1">Minimum point of the bounding box.</param>
+        /// <param name="point2">Maximum point of the bounding box.</param>
+        /// <returns>RTNORM, if succeeds; RTERROR, otherwise.</returns>
+        [System.Security.SuppressUnmanagedCodeSecurity]
+        [DllImport("gccore.dll", CharSet = CharSet.Unicode,
+            CallingConvention = CallingConvention.Cdecl, EntryPoint = "?gcedTextBox@@YAHPEBUresbuf@@QEAN1@Z")]
+        private static extern int gcedTextBoxNew(IntPtr rb, double[] point1, double[] point2);
+
+        /// <summary>
+        /// P/Invokes the unmanaged acedTextBox method.
+        /// </summary>
+        /// <param name="rb">ResultBuffer containing the DBText DXF definition.</param>
+        /// <param name="point1">Minimum point of the bounding box.</param>
+        /// <param name="point2">Maximum point of the bounding box.</param>
+        /// <returns>RTNORM, if succeeds; RTERROR, otherwise.</returns>
+        [SuppressMessage("ReSharper", "InconsistentNaming")]
+        private static int acedTextBox(IntPtr rb, double[] point1, double[] point2) =>
+            Application.Version < new Version(23, 0)
+                ? gcedTextBox(rb, point1, point2)
+                : gcedTextBoxNew(rb, point1, point2);
     }
 }

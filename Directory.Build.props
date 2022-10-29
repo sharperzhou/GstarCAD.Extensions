@@ -2,9 +2,18 @@
   <PropertyGroup>
     <OutputPath>$(SolutionDir)out\$(Configuration)</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Authors>Sharper</Authors>
     <Version>0.8.0.0</Version>
+    <AssemblyVersion>0.8.0</AssemblyVersion>
+    <FileVersion>2022.1</FileVersion>
+    <PackageVersion>2022.1</PackageVersion>
+    <Title>GstarCAD Extension Library</Title>
     <Product>GstarCAD Extension Library</Product>
+    <AssemblyTitle>GstarCAD Extension Library</AssemblyTitle>
     <Description>An unofficial extension library enhanced for GstarCAD .NET SDK</Description>
     <Copyright>Copyright (c) Sharper under MIT License</Copyright>
+    <PackageLicenseUrl>MIT</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/sharperzhou/GstarCAD.Extensions</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sharperzhou/GstarCAD.Extensions</RepositoryUrl>
   </PropertyGroup>
 </Project>

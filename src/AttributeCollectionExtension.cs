@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using GrxCAD.DatabaseServices;
-using GrxCAD.Runtime;
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -18,7 +18,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="forceOpenOnLockedLayers">Value indicating if locked layers should be opened.</param>
         /// <returns>The sequence of attribute references.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
+        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
         public static IEnumerable<AttributeReference> GetObjects(
             this AttributeCollection source,
             OpenMode mode = OpenMode.ForRead,
@@ -26,17 +26,9 @@ namespace Sharper.GstarCAD.Extensions
             bool forceOpenOnLockedLayers = false)
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
-            if (source.Count <= 0)
-            {
-                yield break;
-            }
 
-            var tr = source[0].Database.GetTopTransaction();
-            foreach (ObjectId id in source)
-            {
-                if (!id.IsErased || openErased)
-                    yield return (AttributeReference)tr.GetObject(id, mode, openErased, forceOpenOnLockedLayers);
-            }
+            return source.Cast<ObjectId>().Where(id => !id.IsErased || openErased)
+                .GetObjects<AttributeReference>(mode, openErased, forceOpenOnLockedLayers);
         }
     }
 }

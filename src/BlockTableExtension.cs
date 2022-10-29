@@ -16,7 +16,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The ObjectId of the block table record or ObjectId.Null if not found.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="blockTable"/> is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown if <paramref name ="blockName"/> is null or empty.</exception>
-        public static ObjectId GetBlock(this BlockTable blockTable, string blockName)
+        public static ObjectId GetBlockDefinition(this BlockTable blockTable, string blockName)
         {
             Throwable.ThrowIfArgumentNull(blockTable, nameof(blockTable));
             Throwable.ThrowIfStringNullOrWhiteSpace(blockName, nameof(blockName));
@@ -26,7 +26,7 @@ namespace Sharper.GstarCAD.Extensions
             {
                 string blockPath = HostApplicationServices.Current.FindFile(
                     blockName + ".dwg", blockTable.Database, FindFileHint.Default);
-                blockTable.OpenForWrite();
+                blockTable.UpgradeWrite();
                 using (var tmpDb = new Database(false, true))
                 {
                     tmpDb.ReadDwgFile(blockPath, FileOpenMode.OpenForReadAndAllShare, true, null);

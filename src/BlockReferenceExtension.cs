@@ -25,6 +25,33 @@ namespace Sharper.GstarCAD.Extensions
         }
 
         /// <summary>
+        /// Get all the AttributeReference/AttributeDefinition pairs
+        /// </summary>
+        /// <param name="source">Instance to which the method applies.</param>
+        /// <returns>Sequence of pairs AttributeReference/AttributeDefinition.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
+        /// <remarks>
+        /// Search algorithm based on AttributeReference. So, the result of *Definition* MAY BE NULL when
+        /// the SPECIAL AttributeReference created without using AttributeDefinition.
+        /// </remarks>
+        public static IEnumerable<KeyValuePair<AttributeReference, AttributeDefinition>> GetAttributePairs(
+            this BlockReference source)
+        {
+            Throwable.ThrowIfArgumentNull(source, nameof(source));
+            if (source.AttributeCollection.Count <= 0)
+                yield break;
+            var blockDefinition = source.BlockTableRecord.GetObject<BlockTableRecord>();
+            var attributeDefinitions = blockDefinition.GetObjects<AttributeDefinition>().ToDictionary(d => d.Tag);
+            var attributeReferences = source.AttributeCollection.GetObjects();
+
+            foreach (AttributeReference attributeReference in attributeReferences)
+            {
+                yield return new KeyValuePair<AttributeReference, AttributeDefinition>(attributeReference,
+                    attributeDefinitions.TryGetValue(attributeReference.Tag, out var val) ? val : null);
+            }
+        }
+
+        /// <summary>
         /// Gets all the attributes by tag.
         /// </summary>
         /// <param name="source">Instance to which the method applies.</param>
@@ -45,7 +72,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="source">Instance to which the method applies.</param>
         /// <returns>Collection of pairs Tag/Value.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        public static Dictionary<string, string> GetAttributesValues(this BlockReference source)
+        public static Dictionary<string, string> GetAttributeValues(this BlockReference source)
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
             return source.GetAttributesByTag().ToDictionary(p => p.Key, p => p.Value.TextString);
@@ -67,36 +94,29 @@ namespace Sharper.GstarCAD.Extensions
             Throwable.ThrowIfStringNullOrWhiteSpace(tag, nameof(tag));
             Throwable.ThrowIfArgumentNull(value, nameof(value));
 
-            foreach (AttributeReference attRef in target.AttributeCollection.GetObjects())
-            {
-                if (attRef.Tag == tag)
-                {
-                    attRef.TextString = value;
-                    return value;
-                }
-            }
-
-            return null;
+            return target.AttributeCollection.GetObjects()
+                .Where(attRef => attRef.Tag == tag)
+                .Select(attRef => attRef.TextString = value)
+                .FirstOrDefault();
         }
 
         /// <summary>
         /// Sets the values to the attributes.
         /// </summary>
         /// <param name="target">Instance to which the method applies.</param>
-        /// <param name="attribs">Collection of pairs Tag/Value.</param>
+        /// <param name="attributes">Collection of pairs Tag/Value.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="target"/> is null.</exception>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name ="attribs"/> is null.</exception>
-        public static void SetAttributeValues(this BlockReference target, Dictionary<string, string> attribs)
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name ="attributes"/> is null.</exception>
+        public static void SetAttributeValues(this BlockReference target, Dictionary<string, string> attributes)
         {
             Throwable.ThrowIfArgumentNull(target, nameof(target));
-            Throwable.ThrowIfArgumentNull(attribs, nameof(attribs));
+            Throwable.ThrowIfArgumentNull(attributes, nameof(attributes));
 
             foreach (AttributeReference attRef in target.AttributeCollection.GetObjects())
             {
-                if (attribs.ContainsKey(attRef.Tag))
+                if (attributes.ContainsKey(attRef.Tag))
                 {
-                    attRef.OpenForWrite();
-                    attRef.TextString = attribs[attRef.Tag];
+                    attRef.UpgradeWrite().TextString = attributes[attRef.Tag];
                 }
             }
         }
@@ -105,35 +125,31 @@ namespace Sharper.GstarCAD.Extensions
         /// Adds the attribute references to the block reference and set their values.
         /// </summary>
         /// <param name="target">Instance to which the method applies.</param>
-        /// <param name="attribValues">Collection of pairs Tag/Value.</param>
+        /// <param name="attributeValues">Collection of pairs Tag/Value.</param>
         /// <returns>A Dictionary containing the newly created attribute references by tag.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="target"/> is null.</exception>
         /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
         public static Dictionary<string, AttributeReference> AddAttributeReferences(this BlockReference target,
-            Dictionary<string, string> attribValues)
+            Dictionary<string, string> attributeValues)
         {
             Throwable.ThrowIfArgumentNull(target, nameof(target));
-
-            Transaction tr = target.Database.GetTopTransaction();
 
             BlockTableRecord btr = target.BlockTableRecord.GetObject<BlockTableRecord>();
 
             var attribs = new Dictionary<string, AttributeReference>();
             foreach (AttributeDefinition attDef in btr.GetObjects<AttributeDefinition>())
             {
-                if (!attDef.Constant)
-                {
-                    var attRef = new AttributeReference();
-                    attRef.SetAttributeFromBlock(attDef, target.BlockTransform);
-                    if (attribValues != null && attribValues.ContainsKey(attDef.Tag.ToUpper()))
-                    {
-                        attRef.TextString = attribValues[attDef.Tag.ToUpper()];
-                    }
+                if (attDef.Constant)
+                    continue;
 
-                    target.AttributeCollection.AppendAttribute(attRef);
-                    tr.AddNewlyCreatedDBObject(attRef, true);
-                    attribs[attRef.Tag] = attRef;
-                }
+                var attRef = new AttributeReference();
+                attRef.SetAttributeFromBlock(attDef, target.BlockTransform);
+                if (attributeValues != null && attributeValues.ContainsKey(attDef.Tag))
+                    attRef.TextString = attributeValues[attDef.Tag];
+
+                target.AttributeCollection.AppendAttribute(attRef);
+                target.Database.TransactionManager.AddNewlyCreatedDBObject(attRef, true);
+                attribs[attRef.Tag] = attRef;
             }
 
             return attribs;
@@ -162,21 +178,23 @@ namespace Sharper.GstarCAD.Extensions
 
             foreach (AttributeDefinition attDef in attributeDefinitions)
             {
-                var attRef = new AttributeReference();
-                attRef.SetAttributeFromBlock(attDef, target.BlockTransform);
-                if (attDef.Constant)
+                using (var attRef = new AttributeReference())
                 {
-                    attRef.TextString = attDef.IsMTextAttributeDefinition
-                        ? attDef.MTextAttributeDefinition.Contents
-                        : attDef.TextString;
-                }
-                else if (attValues.ContainsKey(attDef.Tag))
-                {
-                    attRef.TextString = attValues[attDef.Tag];
-                }
+                    attRef.SetAttributeFromBlock(attDef, target.BlockTransform);
+                    if (attDef.Constant)
+                    {
+                        attRef.TextString = attDef.IsMTextAttributeDefinition
+                            ? attDef.MTextAttributeDefinition.Contents
+                            : attDef.TextString;
+                    }
+                    else if (attValues.ContainsKey(attDef.Tag))
+                    {
+                        attRef.TextString = attValues[attDef.Tag];
+                    }
 
-                target.AttributeCollection.AppendAttribute(attRef);
-                target.Database.TransactionManager.AddNewlyCreatedDBObject(attRef, true);
+                    target.AttributeCollection.AppendAttribute(attRef);
+                    target.Database.TransactionManager.AddNewlyCreatedDBObject(attRef, true);
+                }
             }
         }
 
@@ -231,10 +249,9 @@ namespace Sharper.GstarCAD.Extensions
             Throwable.ThrowIfStringNullOrWhiteSpace(propName, nameof(propName));
             Throwable.ThrowIfArgumentNull(value, nameof(value));
             DynamicBlockReferenceProperty prop = target.GetDynamicProperty(propName);
+
             if (prop == null)
-            {
                 return;
-            }
 
             try
             {
@@ -252,43 +269,39 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="source">Instance to which the method applies.</param>
         /// <param name="axis">Axis of the mirroring operation.</param>
         /// <param name="eraseSource">Value indicating if the source block reference have to be erased.</param>
+        /// <returns>
+        /// The mirrored <see cref="ObjectId"/> if <paramref name="eraseSource"/> is false,
+        /// otherwise is <paramref name="source"/> object id.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="axis"/> is null.</exception>
-        public static void Mirror(this BlockReference source, Line3d axis, bool eraseSource)
+        public static ObjectId Mirror(this BlockReference source, Line3d axis, bool eraseSource)
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
             Throwable.ThrowIfArgumentNull(axis, nameof(axis));
 
             var db = source.Database;
-            var tr = db.GetTopTransaction();
 
             BlockReference mirrored;
             if (eraseSource)
             {
                 mirrored = source;
-                if (!mirrored.IsWriteEnabled)
-                {
-                    tr.GetObject(mirrored.ObjectId, OpenMode.ForWrite);
-                }
+                mirrored.UpgradeWrite();
             }
             else
             {
                 var ids = new ObjectIdCollection(new[] { source.ObjectId });
                 var mapping = new IdMapping();
                 db.DeepCloneObjects(ids, db.CurrentSpaceId, mapping, false);
-                mirrored = (BlockReference)tr.GetObject(mapping[source.ObjectId].Value, OpenMode.ForWrite);
+                mirrored = mapping[source.ObjectId].Value.GetObject<BlockReference>(OpenMode.ForWrite);
             }
 
             mirrored.TransformBy(Matrix3d.Mirroring(axis));
 
             if (db.Mirrtext)
-            {
-                return;
-            }
+                return mirrored.ObjectId;
 
-            foreach (ObjectId id in mirrored.AttributeCollection)
+            foreach (AttributeReference attRef in mirrored.AttributeCollection.GetObjects(OpenMode.ForWrite))
             {
-                var attRef = (AttributeReference)tr.GetObject(id, OpenMode.ForWrite);
                 var pts = attRef.GetTextBoxCorners();
                 var cen = new LineSegment3d(pts[0], pts[2]).MidPoint;
                 var rotAxis = Math.Abs(axis.Direction.X) < Math.Abs(axis.Direction.Y)
@@ -296,6 +309,8 @@ namespace Sharper.GstarCAD.Extensions
                     : pts[0].GetVectorTo(pts[1]);
                 mirrored.TransformBy(Matrix3d.Rotation(Math.PI, rotAxis, cen));
             }
+
+            return mirrored.ObjectId;
         }
     }
 }

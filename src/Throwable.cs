@@ -15,7 +15,8 @@ namespace Sharper.GstarCAD.Extensions
         /// <typeparam name="T">Type of the object.</typeparam>
         /// <param name="obj">The instance to which the assertion applies.</param>
         /// <param name="paramName">Name of the parameter.</param>
-        public static void ThrowIfArgumentNull<T>([NoEnumeration] T obj, string paramName) where T : class
+        public static void ThrowIfArgumentNull<T>([NoEnumeration] T obj, string paramName)
+            where T : class
         {
             if (obj == null)
                 throw new System.ArgumentNullException(paramName);

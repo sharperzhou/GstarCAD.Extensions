@@ -25,12 +25,9 @@ namespace Sharper.GstarCAD.Extensions
             where T : SymbolTableRecord
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
-            Transaction tr = source.Database.GetTopTransaction();
+            source = openErased ? source.IncludingErased : source;
 
-            foreach (ObjectId id in openErased ? source.IncludingErased : source)
-            {
-                yield return (T)tr.GetObject(id, mode, openErased, false);
-            }
+            return source.Cast<ObjectId>().GetObjects<T>(mode);
         }
 
         /// <summary>

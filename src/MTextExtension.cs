@@ -15,7 +15,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="text">Instance to which the method applies.</param>
         /// <returns>The points (counter-clockwise from lower left).</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="text"/> is null.</exception>
-        public static Point3d[] GetMTextBoxCorners(this MText text)
+        public static Point3d[] GetTextBoxCorners(this MText text)
         {
             Throwable.ThrowIfArgumentNull(text, nameof(text));
 
@@ -25,6 +25,21 @@ namespace Sharper.GstarCAD.Extensions
             switch (text.Attachment)
             {
                 case AttachmentPoint.TopLeft:
+                case AttachmentPoint.BaseAlign:
+                case AttachmentPoint.BaseCenter:
+                case AttachmentPoint.BaseFit:
+                case AttachmentPoint.BaseLeft:
+                case AttachmentPoint.BaseMid:
+                case AttachmentPoint.BaseRight:
+                case AttachmentPoint.BottomAlign:
+                case AttachmentPoint.BottomFit:
+                case AttachmentPoint.BottomMid:
+                case AttachmentPoint.MiddleAlign:
+                case AttachmentPoint.MiddleFit:
+                case AttachmentPoint.MiddleMid:
+                case AttachmentPoint.TopAlign:
+                case AttachmentPoint.TopFit:
+                case AttachmentPoint.TopMid:
                 default:
                     point1 = new Point3d(0.0, -height, 0.0);
                     point2 = new Point3d(width, 0.0, 0.0);
@@ -70,10 +85,8 @@ namespace Sharper.GstarCAD.Extensions
 
             return new[]
             {
-                point1.TransformBy(transform),
-                new Point3d(point2.X, point1.Y, 0.0).TransformBy(transform),
-                point2.TransformBy(transform),
-                new Point3d(point1.X, point2.Y, 0.0).TransformBy(transform)
+                point1.TransformBy(transform), new Point3d(point2.X, point1.Y, 0.0).TransformBy(transform),
+                point2.TransformBy(transform), new Point3d(point1.X, point2.Y, 0.0).TransformBy(transform)
             };
         }
 
@@ -85,41 +98,28 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="eraseSource">Value indicating if the source block reference have to be erased.</param>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="axis"/> is null.</exception>
-        public static void Mirror(this MText source, Line3d axis, bool eraseSource)
+        public static MText Mirror(this MText source, Line3d axis, bool eraseSource)
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
             Throwable.ThrowIfArgumentNull(axis, nameof(axis));
+            Throwable.ThrowIfObjectIdNull(source.ObjectId, nameof(source));
 
             var db = source.Database;
-            var tr = db.GetTopTransaction();
 
-            MText mirrored;
-            if (eraseSource)
-            {
-                mirrored = source;
-                if (!mirrored.IsWriteEnabled)
-                {
-                    tr.GetObject(mirrored.ObjectId, OpenMode.ForWrite);
-                }
-            }
-            else
-            {
-                var ids = new ObjectIdCollection(new[] { source.ObjectId });
-                var mapping = new IdMapping();
-                db.DeepCloneObjects(ids, db.CurrentSpaceId, mapping, false);
-                mirrored = (MText)tr.GetObject(mapping[source.ObjectId].Value, OpenMode.ForWrite);
-            }
+            MText mirrored = eraseSource ? source.UpgradeWrite() : (MText)source.Clone();
             mirrored.TransformBy(Matrix3d.Mirroring(axis));
 
             if (db.Mirrtext)
-                return;
+                return mirrored;
 
-            var pts = mirrored.GetMTextBoxCorners();
+            var pts = mirrored.GetTextBoxCorners();
             var cen = new LineSegment3d(pts[0], pts[2]).MidPoint;
-            var rotAxis = Math.Abs(axis.Direction.X) < Math.Abs(axis.Direction.Y) ?
-                pts[0].GetVectorTo(pts[3]) :
-                pts[0].GetVectorTo(pts[1]);
+            var rotAxis = Math.Abs(axis.Direction.X) < Math.Abs(axis.Direction.Y)
+                ? pts[0].GetVectorTo(pts[3])
+                : pts[0].GetVectorTo(pts[1]);
             mirrored.TransformBy(Matrix3d.Rotation(Math.PI, rotAxis, cen));
+
+            return mirrored;
         }
     }
 }

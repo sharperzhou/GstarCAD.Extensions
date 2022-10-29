@@ -42,7 +42,7 @@ public void EraseShortLines(double minLength)
         db.GetModelSpace()
             .GetObjects<Line>()
             .Where(line => line.Length < minLength)
-            .UpgradeOpen()
+            .UpgradeWrite()
             .ForEach(line => line.Erase());
         tr.Commit();
     }
