@@ -48,3 +48,5 @@ public void EraseShortLines(double minLength)
     }
 }
 ```
+### Deployment
+This library is published as a [nuget package](https://www.nuget.org/packages/Sharper.GstarCAD.Extensions) in nuget.org.
