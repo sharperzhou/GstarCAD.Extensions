@@ -1,12 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFrameworks>net40;net48</TargetFrameworks>
     <OutputType>Library</OutputType>
     <RootNamespace>Sharper.GstarCAD.Extensions</RootNamespace>
     <AssemblyName>Sharper.GstarCAD.Extensions</AssemblyName>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DocumentationFile>$(Configuration)\$(AssemblyName).xml</DocumentationFile>
+    <DocumentationFile>$(OutputPath)/$(TargetFramework)/$(AssemblyName).xml</DocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
   </PropertyGroup>
   <ItemGroup>
     <None Update="start.scr">
@@ -14,7 +17,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="GstarCADNET" Version="22.0.0" />
-    <PackageReference Include="JetBrains.Annotations" Version="2022.1.0" />
+    <PackageReference Condition="'$(TargetFramework)' == 'net40'" Include="GstarCADNET" Version="17.2.0"/>
+    <PackageReference Condition="'$(TargetFramework)' == 'net48'" Include="GstarCADNET" Version="22.0.0"/>
+    <PackageReference Include="JetBrains.Annotations" Version="2022.1.0"/>
   </ItemGroup>
 </Project>
