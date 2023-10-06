@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Geometry;
+#else
 using GrxCAD.DatabaseServices;
 using GrxCAD.Geometry;
+#endif
 using NUnit.Framework;
 using Sharper.GstarCAD.Extensions;
 

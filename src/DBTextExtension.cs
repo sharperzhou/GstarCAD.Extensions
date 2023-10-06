@@ -1,9 +1,16 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.ApplicationServices.Core;
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Geometry;
+#else
 using GrxCAD.ApplicationServices;
 using GrxCAD.DatabaseServices;
 using GrxCAD.Geometry;
+#endif
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -122,7 +129,13 @@ namespace Sharper.GstarCAD.Extensions
             point1 = new double[3];
             point2 = new double[3];
 
-            if (5100 != acedTextBox(rb.ResbufObject, point1, point2))
+            if (5100 != acedTextBox(
+#if !GSTARCADGREATERTHAN24
+                    rb.ResbufObject
+#else
+                    rb.UnmanagedObject
+#endif
+                    , point1, point2))
                 throw new InvalidOperationException(
                     $"Get text box errors, ERRNO: {Application.GetSystemVariable("ERRNO")}");
         }

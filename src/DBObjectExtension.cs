@@ -1,6 +1,12 @@
 ﻿using System.Linq;
+
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Runtime;
+#else
 using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
+#endif
 
 namespace Sharper.GstarCAD.Extensions
 {

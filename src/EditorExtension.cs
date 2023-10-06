@@ -1,10 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.ApplicationServices.Core;
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.EditorInput;
+using Gssoft.Gscad.Geometry;
+#else
 using GrxCAD.ApplicationServices;
 using GrxCAD.DatabaseServices;
 using GrxCAD.EditorInput;
 using GrxCAD.Geometry;
+#endif
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -25,7 +33,7 @@ namespace Sharper.GstarCAD.Extensions
         public static void ZoomExtents(this Editor ed, Extents3d ext)
         {
             Throwable.ThrowIfArgumentNull(ed, nameof(ed));
-            if (ext.p1 > ext.p4 || ext.p2 > ext.p5 || ext.p3 > ext.p6)
+            if (ext.MinPoint.X > ext.MaxPoint.X || ext.MinPoint.Y > ext.MaxPoint.Y || ext.MinPoint.Z > ext.MaxPoint.Z)
                 throw new ArgumentException("Invalid extents", nameof(ext));
 
             using (ViewTableRecord view = ed.GetCurrentView())

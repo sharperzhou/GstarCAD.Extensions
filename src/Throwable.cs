@@ -1,5 +1,11 @@
-﻿using GrxCAD.DatabaseServices;
+﻿#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Runtime;
+#else
+using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
+#endif
+
 using JetBrains.Annotations;
 
 namespace Sharper.GstarCAD.Extensions

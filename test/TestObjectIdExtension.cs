@@ -1,9 +1,15 @@
 ﻿using System;
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Runtime;
+using Exception = Gssoft.Gscad.Runtime.Exception;
+#else
 using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
+using Exception = GrxCAD.Runtime.Exception;
+#endif
 using NUnit.Framework;
 using Sharper.GstarCAD.Extensions;
-using Exception = GrxCAD.Runtime.Exception;
 
 namespace GstarCAD.Extensions.Test
 {

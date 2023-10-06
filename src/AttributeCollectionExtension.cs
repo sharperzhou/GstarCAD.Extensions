@@ -1,6 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Exception = Gssoft.Gscad.Runtime.Exception;
+#else
 using GrxCAD.DatabaseServices;
+using Exception = GrxCAD.Runtime.Exception;
+#endif
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -18,7 +25,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="forceOpenOnLockedLayers">Value indicating if locked layers should be opened.</param>
         /// <returns>The sequence of attribute references.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
         public static IEnumerable<AttributeReference> GetObjects(
             this AttributeCollection source,
             OpenMode mode = OpenMode.ForRead,

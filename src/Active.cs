@@ -1,11 +1,18 @@
-﻿using GrxCAD.ApplicationServices;
+﻿#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.ApplicationServices;
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.EditorInput;
+using Application = Gssoft.Gscad.ApplicationServices.Core.Application;
+#else
+using GrxCAD.ApplicationServices;
 using GrxCAD.DatabaseServices;
 using GrxCAD.EditorInput;
+#endif
 
 namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
-    /// Provides easy access to several "active" objects in AutoCAD runtime environment.
+    /// Provides easy access to several "active" objects in GstarCAD runtime environment.
     /// </summary>
     /// <remarks>
     /// Inspired by Scott McFarlane

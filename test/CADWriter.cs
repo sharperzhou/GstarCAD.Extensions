@@ -1,7 +1,13 @@
 ﻿using System.IO;
 using System.Text;
+
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.ApplicationServices.Core;
+using Gssoft.Gscad.EditorInput;
+#else
 using GrxCAD.ApplicationServices;
 using GrxCAD.EditorInput;
+#endif
 
 namespace GstarCAD.Extensions.Test
 {

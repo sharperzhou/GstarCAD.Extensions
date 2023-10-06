@@ -1,8 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Runtime;
+using Exception = Gssoft.Gscad.Runtime.Exception;
+#else
 using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
 using Exception = GrxCAD.Runtime.Exception;
+#endif
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -22,7 +29,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="matchExact">Match the type exactly.</param>
         /// <returns>The sequence of opened objects.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
         public static IEnumerable<T> GetObjects<T>(
             this IEnumerable<ObjectId> source,
             OpenMode mode = OpenMode.ForRead,
@@ -57,7 +64,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="source">Sequence of DBObjects to upgrade.</param>
         /// <returns>The sequence of opened for write objects (objets on locked layers are discard).</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="source"/> is null.</exception>
-        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there's no active transaction.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there's no active transaction.</exception>
         public static IEnumerable<T> UpgradeWrite<T>(this IEnumerable<T> source) where T : DBObject
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));

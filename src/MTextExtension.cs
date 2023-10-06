@@ -1,6 +1,12 @@
 ﻿using System;
+
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Geometry;
+#else
 using GrxCAD.DatabaseServices;
 using GrxCAD.Geometry;
+#endif
 
 namespace Sharper.GstarCAD.Extensions
 {

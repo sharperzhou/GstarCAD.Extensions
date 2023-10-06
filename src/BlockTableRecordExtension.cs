@@ -1,7 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Geometry;
+using Exception = Gssoft.Gscad.Runtime.Exception;
+#else
 using GrxCAD.DatabaseServices;
 using GrxCAD.Geometry;
+using Exception = GrxCAD.Runtime.Exception;
+#endif
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -21,7 +29,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="matchExact">Match the type exactly.</param>
         /// <returns>The sequence of opened objects.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="blockTableRecord"/> is null.</exception>
-        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
         public static IEnumerable<T> GetObjects<T>(
             this BlockTableRecord blockTableRecord,
             OpenMode mode = OpenMode.ForRead,
@@ -43,7 +51,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The collection of added entities ObjectId.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="owner"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="entities"/> is null.</exception>
-        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
         public static ObjectIdCollection Add(this BlockTableRecord owner, IEnumerable<Entity> entities)
         {
             Throwable.ThrowIfArgumentNull(owner, nameof(owner));
@@ -67,7 +75,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The collection of added entities ObjectId.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="owner"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="entities"/> is null.</exception>
-        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
         public static ObjectIdCollection Add(this BlockTableRecord owner, params Entity[] entities)
         {
             return Add(owner, (IEnumerable<Entity>)entities);
@@ -81,7 +89,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The ObjectId of added entity.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="owner"/> is null.</exception>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="entity"/> is null.</exception>
-        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
         public static ObjectId Add(this BlockTableRecord owner, Entity entity)
         {
             return Add(owner, new[] { entity })[0];
@@ -103,8 +111,8 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The newly created BlockReference.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="target"/> is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown if <paramref name ="blockName"/> is null or empty.</exception>
-        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
-        /// <exception cref="GrxCAD.Runtime.Exception">eNullObjectId is thrown if there is no BlockTableRecord with name <paramref name="blockName"/> after inserting.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active Transaction.</exception>
+        /// <exception cref="Exception">eNullObjectId is thrown if there is no BlockTableRecord with name <paramref name="blockName"/> after inserting.</exception>
         public static BlockReference InsertBlockFrom(
             this BlockTableRecord target,
             string blockName,

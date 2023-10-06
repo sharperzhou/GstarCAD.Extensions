@@ -1,5 +1,10 @@
-﻿using GrxCAD.DatabaseServices;
+﻿#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Runtime;
+#else
+using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
+#endif
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -9,7 +14,7 @@ namespace Sharper.GstarCAD.Extensions
     public static class ObjectIdExtension
     {
         /// <summary>
-        /// Tries to open an AutoCAD object of the given type in the given open mode.
+        /// Tries to open an GstarCAD object of the given type in the given open mode.
         /// </summary>
         /// <typeparam name="T">Type of the output object.</typeparam>
         /// <param name="id">ObjectId to open.</param>
@@ -40,7 +45,7 @@ namespace Sharper.GstarCAD.Extensions
         }
 
         /// <summary>
-        /// Opens an AutoCAD object of the given type in the given open mode.
+        /// Opens an GstarCAD object of the given type in the given open mode.
         /// </summary>
         /// <typeparam name="T">Type of the object to return.</typeparam>
         /// <param name="id">ObjectId to open.</param>

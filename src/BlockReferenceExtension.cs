@@ -1,8 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Geometry;
+using Exception = Gssoft.Gscad.Runtime.Exception;
+#else
 using GrxCAD.DatabaseServices;
 using GrxCAD.Geometry;
+using Exception = GrxCAD.Runtime.Exception;
+#endif
 
 namespace Sharper.GstarCAD.Extensions
 {
@@ -128,7 +136,7 @@ namespace Sharper.GstarCAD.Extensions
         /// <param name="attributeValues">Collection of pairs Tag/Value.</param>
         /// <returns>A Dictionary containing the newly created attribute references by tag.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name ="target"/> is null.</exception>
-        /// <exception cref="GrxCAD.Runtime.Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
+        /// <exception cref="Exception">eNoActiveTransactions is thrown if there is no active transaction.</exception>
         public static Dictionary<string, AttributeReference> AddAttributeReferences(this BlockReference target,
             Dictionary<string, string> attributeValues)
         {

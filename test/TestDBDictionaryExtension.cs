@@ -1,5 +1,9 @@
 ﻿using System.Linq;
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+#else
 using GrxCAD.DatabaseServices;
+#endif
 using NUnit.Framework;
 using Sharper.GstarCAD.Extensions;
 

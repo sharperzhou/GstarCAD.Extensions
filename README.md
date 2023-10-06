@@ -43,6 +43,7 @@ public void EraseShortLines(double minLength)
             .GetObjects<Line>()
             .Where(line => line.Length < minLength)
             .UpgradeWrite()
+            .ToList()
             .ForEach(line => line.Erase());
         tr.Commit();
     }

@@ -1,8 +1,14 @@
 ﻿using System;
 using System.IO;
+#if GSTARCADGREATERTHAN24
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.EditorInput;
+using Gssoft.Gscad.Runtime;
+#else
 using GrxCAD.DatabaseServices;
 using GrxCAD.EditorInput;
 using GrxCAD.Runtime;
+#endif
 using NUnit.Common;
 using NUnitLite;
 using Sharper.GstarCAD.Extensions;
