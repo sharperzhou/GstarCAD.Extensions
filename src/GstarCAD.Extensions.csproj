@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net40;net48</TargetFrameworks>
     <OutputType>Library</OutputType>
@@ -17,8 +17,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Condition="'$(TargetFramework)' == 'net40'" Include="GstarCADNET" Version="17.2.0"/>
-    <PackageReference Condition="'$(TargetFramework)' == 'net48'" Include="GstarCADNET" Version="24.0.0"/>
+    <PackageReference Condition="'$(TargetFramework)' == 'net40'" Include="GstarCADNET" Version="[17.2,20)"/>
+    <PackageReference Condition="'$(TargetFramework)' == 'net48'" Include="GstarCADNET" Version="[24,)"/>
     <PackageReference Include="JetBrains.Annotations" Version="2022.1.0" PrivateAssets="All"/>
   </ItemGroup>
 </Project>
