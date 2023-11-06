@@ -5,7 +5,7 @@ using GrxCAD.EditorInput;
 namespace Sharper.GstarCAD.Extensions
 {
     /// <summary>
-    /// Provides easy access to several "active" objects in AutoCAD runtime environment.
+    /// Provides easy access to several "active" objects in GstarCAD runtime environment.
     /// </summary>
     /// <remarks>
     /// Inspired by Scott McFarlane

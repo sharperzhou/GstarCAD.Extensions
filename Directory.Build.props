@@ -1,10 +1,11 @@
 ﻿<Project>
   <PropertyGroup>
     <OutputPath>$(SolutionDir)out\$(Configuration)</OutputPath>
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <Authors>Sharper</Authors>
-    <Version>1.0.0.0</Version>
+    <Version>1.1.0.0</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
-    <FileVersion>2022.1</FileVersion>
+    <FileVersion>2022.2</FileVersion>
     <PackageVersion>$(FileVersion)</PackageVersion>
     <Title>GstarCAD Extension Library</Title>
     <Product>GstarCAD Extension Library</Product>
@@ -15,6 +16,7 @@
     <PackageProjectUrl>https://github.com/sharperzhou/GstarCAD.Extensions</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sharperzhou/GstarCAD.Extensions</RepositoryUrl>
     <PackageIconUrl>https://avatars.githubusercontent.com/u/20104589?s=400&amp;u=eb97a1794c51430aa7ee914beee1731dce26e4db&amp;v=4</PackageIconUrl>
+   	<PackageIcon>logo.jpg</PackageIcon>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>GstarCAD; SDK; .NET Extension</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -22,5 +24,6 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="../README.md" Pack="true" PackagePath=""/>
+   	<None Include="../logo.jpg" Pack="true" PackagePath=""/>
   </ItemGroup>
 </Project>

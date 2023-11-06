@@ -75,7 +75,8 @@ namespace Sharper.GstarCAD.Extensions
         public static Dictionary<string, string> GetAttributeValues(this BlockReference source)
         {
             Throwable.ThrowIfArgumentNull(source, nameof(source));
-            return source.GetAttributesByTag().ToDictionary(p => p.Key, p => p.Value.TextString);
+            return source.GetAttributesByTag()
+                .ToDictionary(p => p.Key, p => p.Value.TextString, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -95,8 +96,8 @@ namespace Sharper.GstarCAD.Extensions
             Throwable.ThrowIfArgumentNull(value, nameof(value));
 
             return target.AttributeCollection.GetObjects()
-                .Where(attRef => attRef.Tag == tag)
-                .Select(attRef => attRef.TextString = value)
+                .Where(attRef => string.Equals(attRef.Tag, tag, StringComparison.OrdinalIgnoreCase))
+                .Select(attRef => attRef.UpgradeWrite().TextString = value)
                 .FirstOrDefault();
         }
 
@@ -136,7 +137,7 @@ namespace Sharper.GstarCAD.Extensions
 
             BlockTableRecord btr = target.BlockTableRecord.GetObject<BlockTableRecord>();
 
-            var attribs = new Dictionary<string, AttributeReference>();
+            var attributes = new Dictionary<string, AttributeReference>(attributeValues?.Comparer);
             foreach (AttributeDefinition attDef in btr.GetObjects<AttributeDefinition>())
             {
                 if (attDef.Constant)
@@ -149,10 +150,10 @@ namespace Sharper.GstarCAD.Extensions
 
                 target.AttributeCollection.AppendAttribute(attRef);
                 target.Database.TransactionManager.AddNewlyCreatedDBObject(attRef, true);
-                attribs[attRef.Tag] = attRef;
+                attributes[attRef.Tag] = attRef;
             }
 
-            return attribs;
+            return attributes;
         }
 
         /// <summary>

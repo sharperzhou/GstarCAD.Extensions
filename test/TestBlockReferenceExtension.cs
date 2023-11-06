@@ -31,6 +31,7 @@ namespace GstarCAD.Extensions.Test
         {
             using (var blockReference =
                    new BlockReference(new Point3d(200, 200, 0), _randomBlockDefinition.BlockDefinitionId))
+            using (Active.Database.TransactionManager.StartTransaction())
             {
                 // TODO: How to create dynamic block?
                 var ex = Assert.Catch<Exception>(() => blockReference.GetEffectiveName());
