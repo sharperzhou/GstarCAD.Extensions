@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-#if GSTARCADGREATERTHAN24
+#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
 using Gssoft.Gscad.ApplicationServices.Core;
 using Gssoft.Gscad.DatabaseServices;
 using Gssoft.Gscad.EditorInput;
@@ -19,7 +19,7 @@ namespace Sharper.GstarCAD.Extensions
     /// <summary>
     /// Provides extension methods for the Editor type.
     /// </summary>
-    public static class EditorExtension
+    public static partial class EditorExtension
     {
         #region Zoom
 
@@ -38,7 +38,7 @@ namespace Sharper.GstarCAD.Extensions
 
             using (ViewTableRecord view = ed.GetCurrentView())
             {
-                ext.TransformBy(view.WorldToEye());
+                ext.TransformBy(view.WcsToDcs());
                 view.Width = ext.MaxPoint.X - ext.MinPoint.X;
                 view.Height = ext.MaxPoint.Y - ext.MinPoint.Y;
                 view.CenterPoint = new Point2d(
@@ -134,7 +134,7 @@ namespace Sharper.GstarCAD.Extensions
             Throwable.ThrowIfArgumentNull(ed, nameof(ed));
             using (ViewTableRecord view = ed.GetCurrentView())
             {
-                center = center.TransformBy(view.WorldToEye());
+                center = center.TransformBy(view.WcsToDcs());
                 view.Height /= scale;
                 view.Width /= scale;
                 view.CenterPoint = new Point2d(center.X, center.Y);

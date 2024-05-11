@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-#if GSTARCADGREATERTHAN24
+#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
 using Gssoft.Gscad.DatabaseServices;
 #else
 using GrxCAD.DatabaseServices;

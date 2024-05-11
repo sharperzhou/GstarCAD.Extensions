@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-#if GSTARCADGREATERTHAN24
+#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
 using Gssoft.Gscad.DatabaseServices;
 using Gssoft.Gscad.Geometry;
 #else
@@ -13,7 +13,7 @@ using Sharper.GstarCAD.Extensions;
 
 namespace GstarCAD.Extensions.Test
 {
-    public class TestEditorExtension
+    public partial class TestEditorExtension
     {
         [Test]
         public void TestZoomExtents()

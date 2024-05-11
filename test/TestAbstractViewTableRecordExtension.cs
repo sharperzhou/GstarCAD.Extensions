@@ -9,8 +9,8 @@ namespace GstarCAD.Extensions.Test
         public void TestEyeAndWorldMatrix()
         {
             var editor = Active.Document.Editor;
-            var matrix1 = editor.GetCurrentView().EyeToWorld();
-            var matrix2 = editor.GetCurrentView().WorldToEye();
+            var matrix1 = editor.GetCurrentView().DcsToWcs();
+            var matrix2 = editor.GetCurrentView().WcsToDcs();
 
             Assert.IsTrue(matrix1.IsInverse(matrix2));
             Assert.IsTrue(matrix2.IsInverse(matrix1));

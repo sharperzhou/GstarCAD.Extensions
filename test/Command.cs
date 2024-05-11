@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-#if GSTARCADGREATERTHAN24
+#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
 using Gssoft.Gscad.DatabaseServices;
 using Gssoft.Gscad.EditorInput;
 using Gssoft.Gscad.Runtime;

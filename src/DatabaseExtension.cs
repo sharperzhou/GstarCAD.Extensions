@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-#if GSTARCADGREATERTHAN24
+#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
 using Gssoft.Gscad.DatabaseServices;
 using Gssoft.Gscad.Runtime;
+
 #else
 using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
@@ -114,5 +115,101 @@ namespace Sharper.GstarCAD.Extensions
         /// <returns>The sequence of layout names.</returns>
         public static IEnumerable<string> GetLayoutNames(this Database db, bool exceptModel = true) =>
             db.GetLayouts(exceptModel).OrderBy(l => l.TabOrder).Select(l => l.LayoutName);
+
+        /// <summary>
+        /// Gets the value of the custom property.
+        /// </summary>
+        /// <param name="db">Instance to which the method applies.</param>
+        /// <param name="key">Custom property key.</param>
+        /// <returns>The value of the custom property; or null, if it does not exist.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="db"/> is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown if <paramref name ="key"/> is null or empty.</exception>
+        public static string GetCustomProperty(this Database db, string key)
+        {
+            Throwable.ThrowIfArgumentNull(db, nameof(db));
+            Throwable.ThrowIfStringNullOrWhiteSpace(key, nameof(key));
+
+            var summaryInfoBuilder = new DatabaseSummaryInfoBuilder(db.SummaryInfo);
+            var customProperties = summaryInfoBuilder.CustomPropertyTable;
+            return customProperties.Contains(key) ? (string)customProperties[key] : null;
+        }
+
+        /// <summary>
+        /// Gets all the custom properties.
+        /// </summary>
+        /// <param name="db">Instance to which the method applies.</param>
+        /// <returns>A dictionary of custom properties.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="db"/> is null.</exception>
+        public static Dictionary<string, string> GetCustomProperties(this Database db)
+        {
+            Throwable.ThrowIfArgumentNull(db, nameof(db));
+
+            var customProperties = db.SummaryInfo.CustomProperties;
+            var result = new Dictionary<string, string>();
+            while (customProperties.MoveNext())
+            {
+                var entry = customProperties.Entry;
+                result.Add((string)entry.Key, (string)entry.Value);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Sets the value of the custom property if it exists; otherwise, add the property.
+        /// </summary>
+        /// <param name="db">Instance to which the method applies.</param>
+        /// <param name="key">Property key.</param>
+        /// <param name="value">Property value.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="db"/> is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown if <paramref name ="key"/> is null or empty.</exception>
+        public static void SetCustomProperty(this Database db, string key, string value)
+        {
+            Throwable.ThrowIfArgumentNull(db, nameof(db));
+            Throwable.ThrowIfStringNullOrWhiteSpace(key, nameof(key));
+
+            var summaryInfoBuilder = new DatabaseSummaryInfoBuilder(db.SummaryInfo);
+            var customProperties = summaryInfoBuilder.CustomPropertyTable;
+            if (customProperties.Contains(key))
+            {
+                customProperties[key] = value;
+            }
+            else
+            {
+                customProperties.Add(key, value);
+            }
+
+            db.SummaryInfo = summaryInfoBuilder.ToDatabaseSummaryInfo();
+        }
+
+        /// <summary>
+        /// Sets the values of the custom properties if they exist; otherwise, add them.
+        /// </summary>
+        /// <param name="db">Instance to which the method applies.</param>
+        /// <param name="values">KeyValue pairs for properties.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="db"/> is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown if <paramref name ="values"/> is null.</exception>
+        public static void SetCustomProperties(this Database db, params KeyValuePair<string, string>[] values)
+        {
+            Throwable.ThrowIfArgumentNull(db, nameof(db));
+            Throwable.ThrowIfArgumentNull(values, nameof(values));
+
+            var summaryInfoBuilder = new DatabaseSummaryInfoBuilder(db.SummaryInfo);
+            var customProperties = summaryInfoBuilder.CustomPropertyTable;
+            foreach (KeyValuePair<string, string> pair in values)
+            {
+                string key = pair.Key;
+                if (customProperties.Contains(key))
+                {
+                    customProperties[key] = pair.Value;
+                }
+                else
+                {
+                    customProperties.Add(key, pair.Value);
+                }
+            }
+
+            db.SummaryInfo = summaryInfoBuilder.ToDatabaseSummaryInfo();
+        }
     }
 }

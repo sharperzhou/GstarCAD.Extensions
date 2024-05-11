@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
-#if GSTARCADGREATERTHAN24
+#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
 using Gssoft.Gscad.ApplicationServices.Core;
 using Gssoft.Gscad.DatabaseServices;
 using Gssoft.Gscad.Geometry;
@@ -104,7 +104,7 @@ namespace Sharper.GstarCAD.Extensions
         }
 
         /// <summary>
-        /// Get bounding box(different between <see cref="DBText.GeometricExtents"/>) of text.
+        /// Get bounding box(different between DBText.GeometricExtents) of text.
         /// </summary>
         /// <param name="dbText">Text object.</param>
         /// <param name="point1">Minimum (X,Y) coordinates of the box.</param>

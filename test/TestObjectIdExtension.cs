@@ -1,5 +1,5 @@
 ﻿using System;
-#if GSTARCADGREATERTHAN24
+#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
 using Gssoft.Gscad.DatabaseServices;
 using Gssoft.Gscad.Runtime;
 using Exception = Gssoft.Gscad.Runtime.Exception;

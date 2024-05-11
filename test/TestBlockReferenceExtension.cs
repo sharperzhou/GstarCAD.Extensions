@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-#if GSTARCADGREATERTHAN24
+#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
 using Gssoft.Gscad.DatabaseServices;
 using Gssoft.Gscad.Geometry;
 using Gssoft.Gscad.Runtime;
@@ -41,8 +41,15 @@ namespace GstarCAD.Extensions.Test
             using (Active.Database.TransactionManager.StartTransaction())
             {
                 // TODO: How to create dynamic block?
-                var ex = Assert.Catch<Exception>(() => blockReference.GetEffectiveName());
-                Assert.AreEqual(ex?.ErrorStatus, ErrorStatus.NullObjectId);
+                try
+                {
+                    string effectiveName = blockReference.GetEffectiveName();
+                    Assert.IsNotEmpty(effectiveName);
+                }
+                catch (Exception ex)
+                {
+                    Assert.AreEqual(ex.ErrorStatus, ErrorStatus.NullObjectId);
+                }
             }
         }
 

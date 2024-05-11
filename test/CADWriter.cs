@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 
-#if GSTARCADGREATERTHAN24
+#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
 using Gssoft.Gscad.ApplicationServices.Core;
 using Gssoft.Gscad.EditorInput;
 #else

@@ -49,5 +49,13 @@ public void EraseShortLines(double minLength)
     }
 }
 ```
+### Build the project
+```cmd
+> build.bat
+```
+
+> If 'msbuild' is not recognized, please set compilation environment firstly.
+
 ### Deployment
+
 This library is published as a [nuget package](https://www.nuget.org/packages/Sharper.GstarCAD.Extensions) in nuget.org.

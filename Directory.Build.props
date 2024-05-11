@@ -1,14 +1,22 @@
 ﻿<Project>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
+  <PropertyGroup>
+    <GstarCAD24>True</GstarCAD24>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)|$(GstarCAD24)' == 'net48|True'">
     <DefineConstants>$(DefineConstants);GSTARCADGREATERTHAN24</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(GstarCAD24)' == 'True'">
+    <FileVersion>2024.4</FileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(GstarCAD24)' != 'True'">
+    <FileVersion>2023.1</FileVersion>
   </PropertyGroup>
   <PropertyGroup>
     <OutputPath>$(SolutionDir)out\$(Configuration)</OutputPath>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <Authors>Sharper</Authors>
-    <Version>2.2.0.0</Version>
+    <Version>2.3.0.0</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
-    <FileVersion>2024.3</FileVersion>
     <PackageVersion>$(FileVersion)</PackageVersion>
     <Title>GstarCAD Extension Library</Title>
     <Product>GstarCAD Extension Library</Product>
@@ -19,7 +27,7 @@
     <PackageProjectUrl>https://github.com/sharperzhou/GstarCAD.Extensions</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sharperzhou/GstarCAD.Extensions</RepositoryUrl>
     <PackageIconUrl>https://avatars.githubusercontent.com/u/20104589?s=400&amp;u=eb97a1794c51430aa7ee914beee1731dce26e4db&amp;v=4</PackageIconUrl>
-	<PackageIcon>logo.jpg</PackageIcon>
+    <PackageIcon>logo.jpg</PackageIcon>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>GstarCAD; SDK; .NET Extension</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -27,6 +35,6 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="../README.md" Pack="true" PackagePath=""/>
-	<None Include="../logo.jpg" Pack="true" PackagePath=""/>
+    <None Include="../logo.jpg" Pack="true" PackagePath=""/>
   </ItemGroup>
 </Project>
