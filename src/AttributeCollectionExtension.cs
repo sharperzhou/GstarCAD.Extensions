@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
-using Gssoft.Gscad.DatabaseServices;
-using Exception = Gssoft.Gscad.Runtime.Exception;
-#else
+#if !GSTARCADGREATERTHAN24
 using GrxCAD.DatabaseServices;
 using Exception = GrxCAD.Runtime.Exception;
+#else
+using Gssoft.Gscad.DatabaseServices;
+using Exception = Gssoft.Gscad.Runtime.Exception;
 #endif
 
 namespace Sharper.GstarCAD.Extensions

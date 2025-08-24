@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net40;net48</TargetFrameworks>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

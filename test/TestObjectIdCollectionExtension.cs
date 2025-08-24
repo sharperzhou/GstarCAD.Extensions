@@ -1,8 +1,8 @@
 ﻿using System.Linq;
-#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
-using Gssoft.Gscad.DatabaseServices;
-#else
+#if !GSTARCADGREATERTHAN24
 using GrxCAD.DatabaseServices;
+#else
+using Gssoft.Gscad.DatabaseServices;
 #endif
 using NUnit.Framework;
 using Sharper.GstarCAD.Extensions;

@@ -1,12 +1,12 @@
-﻿#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
+﻿#if !GSTARCADGREATERTHAN24
+using GrxCAD.ApplicationServices;
+using GrxCAD.DatabaseServices;
+using GrxCAD.EditorInput;
+#else
 using Gssoft.Gscad.ApplicationServices;
 using Gssoft.Gscad.DatabaseServices;
 using Gssoft.Gscad.EditorInput;
 using Application = Gssoft.Gscad.ApplicationServices.Core.Application;
-#else
-using GrxCAD.ApplicationServices;
-using GrxCAD.DatabaseServices;
-using GrxCAD.EditorInput;
 #endif
 
 namespace Sharper.GstarCAD.Extensions

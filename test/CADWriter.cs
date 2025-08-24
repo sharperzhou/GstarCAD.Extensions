@@ -1,12 +1,12 @@
 ﻿using System.IO;
 using System.Text;
 
-#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
-using Gssoft.Gscad.ApplicationServices.Core;
-using Gssoft.Gscad.EditorInput;
-#else
+#if !GSTARCADGREATERTHAN24
 using GrxCAD.ApplicationServices;
 using GrxCAD.EditorInput;
+#else
+using Gssoft.Gscad.ApplicationServices.Core;
+using Gssoft.Gscad.EditorInput;
 #endif
 
 namespace GstarCAD.Extensions.Test

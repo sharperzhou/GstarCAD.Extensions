@@ -1,11 +1,11 @@
 ﻿using System;
 
-#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
-using Gssoft.Gscad.Geometry;
-using AcRx = Gssoft.Gscad.Runtime;
-#else
+#if !GSTARCADGREATERTHAN24
 using GrxCAD.Geometry;
 using AcRx = GrxCAD.Runtime;
+#else
+using Gssoft.Gscad.Geometry;
+using AcRx = Gssoft.Gscad.Runtime;
 #endif
 
 using NUnit.Framework;

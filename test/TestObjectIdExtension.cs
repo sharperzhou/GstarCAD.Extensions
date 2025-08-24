@@ -1,12 +1,12 @@
 ﻿using System;
-#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
-using Gssoft.Gscad.DatabaseServices;
-using Gssoft.Gscad.Runtime;
-using Exception = Gssoft.Gscad.Runtime.Exception;
-#else
+#if !GSTARCADGREATERTHAN24
 using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
 using Exception = GrxCAD.Runtime.Exception;
+#else
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Runtime;
+using Exception = Gssoft.Gscad.Runtime.Exception;
 #endif
 using NUnit.Framework;
 using Sharper.GstarCAD.Extensions;

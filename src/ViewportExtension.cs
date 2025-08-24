@@ -1,9 +1,9 @@
-﻿#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
-using Gssoft.Gscad.DatabaseServices;
-using Gssoft.Gscad.Geometry;
-#else
+﻿#if !GSTARCADGREATERTHAN24
 using GrxCAD.DatabaseServices;
 using GrxCAD.Geometry;
+#else
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Geometry;
 #endif
 
 namespace Sharper.GstarCAD.Extensions

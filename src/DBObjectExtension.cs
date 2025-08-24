@@ -1,11 +1,11 @@
 ﻿using System.Linq;
 
-#if NET48_OR_GREATER && GSTARCADGREATERTHAN24
-using Gssoft.Gscad.DatabaseServices;
-using Gssoft.Gscad.Runtime;
-#else
+#if !GSTARCADGREATERTHAN24
 using GrxCAD.DatabaseServices;
 using GrxCAD.Runtime;
+#else
+using Gssoft.Gscad.DatabaseServices;
+using Gssoft.Gscad.Runtime;
 #endif
 
 namespace Sharper.GstarCAD.Extensions
